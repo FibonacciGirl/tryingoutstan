@@ -1,0 +1,21 @@
+{
+    "collab_server" : "",
+    "contents" : "#makefake data\n\n\n\nlinear.params<-array(dim=c(n.subjects,3))\nconstant.params<-array(dim=c(n.subjects,2))\n\n\nt<-1:72\nn.trials<-length(t)\nn.subjects<-100\n#theta<-rbinom(n.subjects,1,.2)\ntheta<-rbeta(n.subjects,.5,.5)\nsigma<-rgamma(n.subjects,9,.4)\ntheta\nrtu<-array(dim=c(n.subjects,n.trials))\nrtp<-array(dim=c(n.subjects,n.trials))\n\n\n\nfor(i in 1:n.subjects){\n  linear.params[i,]<-c(rnorm(1,400,50), rnorm(1,800,50), rnorm(1,-15,2.5))\n  constant.params[i,]<-c(rnorm(1,400,50), rnorm(1,-400,50))\n  \n  rtu[i,]<-constant.model(t,constant.params[i,])$rtu + rnorm(n.trials,0,sigma[i])\n  rtp[i,]<-theta[i]*linear.model(t,linear.params[i,])$rtp + (1-theta[i])*constant.model(t,constant.params[i,])$rtp + rnorm(n.trials,0,sigma[i])\n}\n\ngammaShRaFromModeSD(10,2)\n\nJ=n.subjects\nTr=n.trials\n\nmodel_data<-list(J=J,\n                 Tr=Tr,\n                 rtu=rtu,\n                 rtp=rtp)\n\n\nlinear.model<- function(t,params){\n  a<-params[1]; b<-params[2]; c<-params[3]\n  \n  rtu<-mapply(function(x,a){\n    rtu=a\n    return(rtu)\n  },t,MoreArgs= list(a))\n  rtp<-mapply(function(x,b,c){\n    rl=b + c*x\n    return(rl)\n  },t,MoreArgs= list(b,c))\n  \n\n  \n  rt_data<-data.frame(rtu=rtu,rtp=rtp)\n  \n  return(rt_data)\n}\n\nconstant.model<- function(t,params){\n  a<-params[1]; b<-params[2];\n  \n  rtu<-mapply(function(x,a){\n    rtu=a\n    return(rtu)\n  },t,MoreArgs= list(a))\n  rtp<-mapply(function(x,b){\n    rl=b \n    return(rl)\n  },t,MoreArgs= list(b))\n  \n\n  \n  rt_data<-data.frame(rtu=rtu,rtp=rtp)\n  \n  return(rt_data)\n}\n\n\n\n",
+    "created" : 1498654737320.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3373235906",
+    "id" : "2881751C",
+    "lastKnownWriteTime" : 1498741250,
+    "last_content_update" : 1498741250888,
+    "path" : "~/shape_sl_greta_model/Make_fake_data.R",
+    "project_path" : "Make_fake_data.R",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

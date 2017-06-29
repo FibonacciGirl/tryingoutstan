@@ -1,0 +1,21 @@
+{
+    "collab_server" : "",
+    "contents" : "install.packages(\"rstan\", repos = \"https://cloud.r-project.org/\", dependencies=TRUE)\nrequire(rstan)\nlibrary(rstan)\n\nrstan_options(auto_write = TRUE)\noptions(mc.cores = parallel::detectCores())\n\n\n\n\nfit <- stan(file = 'STAN_model_hier.stan', data = model_data, iter = 10000,warmup =1000 , \n            chains = 1, verbose = T )\n\n\n\nprint(fit,par = c('p_intercept_mean'))\nplot(fit,par=c('p_slope[4]'))\ntheta[4]\n\n\n\n",
+    "created" : 1498577585716.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3433524249",
+    "id" : "3650366D",
+    "lastKnownWriteTime" : 1498742642,
+    "last_content_update" : 1498742642918,
+    "path" : "~/shape_sl_greta_model/Test RSTAN.R",
+    "project_path" : "Test RSTAN.R",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

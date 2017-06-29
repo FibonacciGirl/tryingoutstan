@@ -1,0 +1,21 @@
+{
+    "collab_server" : "",
+    "contents" : "library(rstan)\n\nrstan_options(auto_write = TRUE)\noptions(mc.cores = parallel::detectCores())\n\n\n\n\n\n\n\nTr = 72\nJ= 80\nalpha= 27\nbeta= .25\nmu0 = 1\nalpha0 = 1\nalpha1 = 1\ntau0= 100\nbeta0= 1\nbeta1 = 1\na = 101\nb = 10\na0 = 27\nb0 = .5\na1 = 2\nb1 = 32\na2 = 2\nb2=32\n\ngammaShRaFromModeSD(50,10)\n\npriors<- list(proportion = list( fn = 'unif',par1= .5, par2= 2),\n              upper.proportion = list( fn = 'unif',par1= .5, par2= 2),\n              lower.proportion = list( fn = 'unif',par1= .3, par2=.8 ),\n              intercept = list(fn = 'gamma',par1 = 700, par2 = 100),\n              base = list (fn = 'beta',par1 = 1 , par2 =1 ),\n              rate = list (fn = 'beta',par1 = 1 , par2 =1 ),\n              base.1 = list (fn = 'unif',par1 = 0 , par2 =1 ),\n              rate.1 = list (fn = 'unif',par1 = .5 , par2 =1 ),\n              jump = list (fn = 'unif',par1 = 0 , par2 =.75 ),\n              split = list(fn = 'pois', par1 = 36 , par2 = 0),\n              sigma = list (fn = 'gamma', par1 = 50, par2 =10 )\n)\n\n\n\ntemp<-c()\nfor(i in 1:(J/4)){\nparams<-generate.parameter.values(priors)\ntemp<-c(temp,create.recovery.data(params,t=1:72)$unpredictable)\n\n}\ntemp\nparams\nrtu<-matrix(nrow=J,ncol=Tr)\nfor(j in 1:J){\n  rtu[j,]<-temp[1:72]\n  temp<-tail(temp, -72)\n}\nrtu\nmodel.data<- list(list(\n  Tr = Tr,\n  J=J,\n  rtu = rtu,\n  alpha=alpha,\n  beta=beta,\n  mu0 = mu0,\n  beta0 = beta0,\n  beta1 = beta1,\n  tau0=tau0,\n  alpha0=alpha0,\n  alpha1 = alpha1,\n  a = a,\n  b = b,\n  a0 = a0,\n  b0 = b0,\n  a1 = a1,\n  b1 = b1,\n  a2 = a2,\n  b2 = b2\n\n),\nlist(\n  Tr = Tr,\n  J=J,\n  rtu = rtu,\n  alpha=alpha,\n  beta=beta,\n  mu0 = mu0,\n  beta0 = beta0,\n  beta1 = beta1,\n  tau0=tau0,\n  alpha0=alpha0,\n  alpha1 = alpha1,\n  a = a,\n  b = b,\n  a0 = a0,\n  b0 = b0,\n  a1 = a1,\n  b1 = b1,\n  a2 = a2,\n  b2 = b2\n  \n),\nlist(\n  Tr = Tr,\n  J=J,\n  rtu = rtu,\n  alpha=alpha,\n  beta=beta,\n  mu0 = mu0,\n  beta0 = beta0,\n  beta1 = beta1,\n  tau0=tau0,\n  alpha0=alpha0,\n  alpha1 = alpha1,\n  a = a,\n  b = b,\n  a0 = a0,\n  b0 = b0,\n  a1 = a1,\n  b1 = b1,\n  a2 = a2,\n  b2 = b2\n  \n),\nlist(\n  Tr = Tr,\n  J=J,\n  rtu = rtu,\n  alpha=alpha,\n  beta=beta,\n  mu0 = mu0,\n  beta0 = beta0,\n  beta1 = beta1,\n  tau0=tau0,\n  alpha0=alpha0,\n  alpha1 = alpha1,\n  a = a,\n  b = b,\n  a0 = a0,\n  b0 = b0,\n  a1 = a1,\n  b1 = b1,\n  a2 = a2,\n  b2 = b2\n  \n),\nlist(\n  Tr = Tr,\n  J=J,\n  rtu = rtu,\n  alpha=alpha,\n  beta=beta,\n  mu0 = mu0,\n  beta0 = beta0,\n  beta1 = beta1,\n  tau0=tau0,\n  alpha0=alpha0,\n  alpha1 = alpha1,\n  a = a,\n  b = b,\n  a0 = a0,\n  b0 = b0,\n  a1 = a1,\n  b1 = b1,\n  a2 = a2,\n  b2 = b2\n  \n))\n\n\n\nfit.2 <- stan(file = 'rt_unpredictable_reparam.stan', data = model.data, iter = 10000,warmup =1000 , \n            chains = 5, verbose = T)\n\n\nmcmc.fit.2 <- As.mcmc.list(fit.2)\nplot(mcmc.fit.2)\n\nplot.data.fits(subset(create.recovery.data(params,t=1:72),model=='power.constant'))\nparams\nsubset(create.recovery.data(params,t=1:72),model== 'power.constant')\n",
+    "created" : 1498743592927.000,
+    "dirty" : true,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "113296847",
+    "id" : "4E0296A6",
+    "lastKnownWriteTime" : 1498769459,
+    "last_content_update" : 1498769493909,
+    "path" : "~/shape_sl_hierarchical_models/fit_models.R",
+    "project_path" : "fit_models.R",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

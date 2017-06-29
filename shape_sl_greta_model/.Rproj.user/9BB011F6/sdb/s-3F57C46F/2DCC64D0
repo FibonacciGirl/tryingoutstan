@@ -1,0 +1,21 @@
+{
+    "collab_server" : "",
+    "contents" : "data {\n  int <lower=0> Tr; // number of presentation\n  int <lower=0> J; // number of subjects \n  real rtu[J,Tr]; // response time unpredictable\n  real rtp[J,Tr]; // response time predictable\n}\nparameters {\n  real <lower=0,upper=1> theta[J]; //\n  real <lower=0> sigma_mean; // standard deviation group mean\n  real <lower = 0> sigma_sd;\n  real <lower = 0>sigma[J]; // the offset of an individual's mean from the group mean\n  real u_intercept_mean; // unpredictable intercept group mean\n  real u_intercept_sd;\n  real u_intercept[J]; // \n  real p_intercept_mean; //predictable intercept group mean\n  real p_intercept_sd;\n  real p_intercept[J];\n  real p_intercept_mean_2; //predictable intercept group mean\n  real p_intercept_sd_2;\n  real p_intercept_2[J];\n  real p_slope_mean; //predictable slope group mean\n  real p_slope_sd;\n  real p_slope[J];\n\n}\ntransformed parameters {\n  real u_mu[J,Tr];\n  real p_mu[J,Tr];\n\n  \n  for(j in 1:J){\n    for(t in 1:Tr){\n    u_mu[j,t] = u_intercept[j];\n    p_mu[j,t] = theta[j]*p_intercept[j] + (1-theta[j])*(p_intercept_2[j] + p_slope[j]*t);\n    }\n  }\n}\n\nmodel {\n  //priors\n  target += beta_lpdf(theta[J]|1,1);\n  target += gamma_lpdf(sigma_mean|8,1);\n  target += gamma_lpdf(sigma_sd|8,1);\n  target += normal_lpdf(sigma[J]|sigma_mean,sigma_sd);\n  target += normal_lpdf(u_intercept_mean|100,10);\n  target += gamma_lpdf(u_intercept_sd|8,1);\n  target += normal_lpdf(u_intercept[J]|u_intercept_mean,u_intercept_sd);\n  target += normal_lpdf(p_intercept_mean|40,10);\n  target += gamma_lpdf(p_intercept_sd|8,1);\n  target += normal_lpdf(p_intercept[J]|p_intercept_mean, p_intercept_sd);\n  target += normal_lpdf(p_intercept_mean_2|-100,10);\n  target += gamma_lpdf(p_intercept_sd_2|8,1);\n  target += normal_lpdf(p_intercept_2[J]|p_intercept_mean_2,p_intercept_sd_2);\n  target += normal_lpdf(p_slope_mean|-3,2);\n  target += gamma_lpdf(p_slope_sd|8,1);\n  target += normal_lpdf(p_slope[J]|p_slope_mean,p_slope_sd);\n  \n  //likelihood\n  for(j in 1:J){\n    for(t in 1:Tr){\n        target += normal_lpdf(rtu[j,t] | u_mu[j,t], sigma[j]);\n        target += normal_lpdf(rtp[j,t] | p_mu[j,t], sigma[j]);\n    }\n  }\n\n}\n",
+    "created" : 1498681630056.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1309928324",
+    "id" : "2DCC64D0",
+    "lastKnownWriteTime" : 1498683263,
+    "last_content_update" : 1498683263881,
+    "path" : "~/shape_sl_greta_model/STAN_model_hier.stan",
+    "project_path" : "STAN_model_hier.stan",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "stan"
+}

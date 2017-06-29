@@ -1,0 +1,21 @@
+{
+    "collab_server" : "",
+    "contents" : "##Model predit##\n\nu.power.model.predict<-function(t,a,b,c){\n  rtu<- a * ( 1 + b*((t^c)-1))\n  return(c(rtu=rtu))\n}\n\nrl.constant.model.predict<-function(t,d){\n  rl<-d\n  return(c(rl=rl))\n}\n\nrl.logistic.model.predict<-function(t,d,e,f,g){\n  rl<-d+((d*e-d)/(1+exp(f*(t-g))))\n  return(c(rl=rl))\n}\n\nrl.power.model.predict<-function(t,d,e,f){\n  rl<- d*(1 + (e*((t^f)-1)))\n  return(c(rl=rl))\n}\n\n\n# \n# source('scripts/Likelihood 2/create recovery data.R')\n# priors<- list(proportion = list( fn = 'unif',par1= .75, par2= 1.25),\n#               upper.proportion = list( fn = 'unif',par1= .75, par2= 1.25),\n#               lower.proportion = list( fn = 'unif',par1= 0, par2= .5),\n#               intercept = list(fn = 'gamma',par1 = 1000, par2 = 50),\n#               base = list (fn = 'unif',par1 = .3 , par2 = .8 ),\n#               rate = list (fn = 'unif',par1 = .05 , par2 =.5 ),\n#               base.1 = list (fn = 'unif',par1 = .3 , par2 =.8 ),\n#               rate.1 = list (fn = 'unif',par1 = .05 , par2 =.3 ),\n#               jump = list (fn = 'unif',par1 = 0 , par2 =.75 ),\n#               split = list(fn = 'pois', par1 = 36 , par2 = 0),\n#               sigma = list (fn = 'gamma', par1 = 0.01, par2 =200 )\n# )\n# \n# \n# params<-generate.parameter.values(priors)\n# params<-as.list(head(model.params(params,'exponential.power'),-1))\n# \n# t<-1:72\n# test.p.c<-mapply(power.constant.model.predict,t,MoreArgs = params )\n# test.e.c<-mapply(exponential.constant.model.predict,t,MoreArgs = params)\n# test.p.p<-mapply(power.power.model.predict,t,MoreArgs = params)\n# test.p.e<-mapply(power.exponential.model.predict,t,MoreArgs = params)\n# test.e.p<-mapply(exponential.power.model.predict,t,MoreArgs = params)\n# test.e.e<-mapply(exponential.exponential.model.predict,t,MoreArgs = params)\n# test.pp.c<-mapply(piecewise.power.constant.model.predict,t,MoreArgs = params)\n# test.pe.c<-mapply(piecewise.exponential.constant.model.predict,t,MoreArgs = params)\n# test.p.l<-mapply(power.logistic.model.predict,t,MoreArgs = params)\n# test.e.l<-mapply(exponential.logistic.model.predict,t,MoreArgs = params)\n# \n# library(ggplot2)\n# library(gridExtra)\n# plot.model.predict(t,test.p.p)\n# params\n# \n\n\nplot.model.predict<-function(t,test){\n  plot.data<-rbind(data.frame(t=t,rt=test[1,],type = rep('unpredictable',length(t))),data.frame(t=t,rt=test[2,],type=rep('predictable',length(t))))\n  rl.data<-data.frame(t=t,rt=test[3,])\n  \n  p<-ggplot()+\n    geom_line(data=plot.data,aes(x=t,y=rt,col=type))+\n    ggtitle('Response time vs. trial')+\n    theme_minimal()\n  \n  l<-ggplot()+\n    geom_line(data=rl.data,aes(x=t,y=rt))+\n    ggtitle('Relative learning rate')+\n    theme_minimal()\n  \n  i<-grid.arrange(grobs=list(p,l))\n  return(i)\n}\n",
+    "created" : 1498743763862.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1875474642",
+    "id" : "23B455A0",
+    "lastKnownWriteTime" : 1498750918,
+    "last_content_update" : 1498750918983,
+    "path" : "~/shape_sl_hierarchical_models/model_predict.R",
+    "project_path" : "model_predict.R",
+    "properties" : {
+        "tempName" : "Untitled3"
+    },
+    "relative_order" : 8,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

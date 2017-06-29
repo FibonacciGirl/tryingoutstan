@@ -1,0 +1,21 @@
+{
+    "collab_server" : "",
+    "contents" : "library(rstan)\n\n#simple test\ny = c(rnorm(100,80,10))\nmodel_data<-list(list(y=y))\n\nmodel_data\nfit <- stan(file = 'Simple_test.stan', data = model_data, iter = 10000,warmup =1000 , \n            chains = 1, verbose = T )\n\n\nprint(fit)\n#hierarchical test \n\nn.subjects=100\nn.data =1000\n\nmu_mean0 = 80\nmu_meansd= 10\n\na=16\nb=2\n\nmu_mean<-rnorm(1,mu_mean0,mu_meansd)\nmu_sd<-rgamma(1,a,b)\n\nmu<-rnorm(n.subjects,mu_mean,mu_sd)\nsd<-rgamma(n.subjects, a, b)\n\ny<-array(dim=c(n.subjects,n.data))\n\nfor(i in 1:n.subjects){\n  y[i,]<-rnorm(n.data,mu[i],sd[i])\n}\ny\n\nJ=n.subjects\nTr=n.data\n\nmodel_data_hierarchical<-list(list('J' = J, 'Tr' = Tr,\n  'y'=y))\n\nfit_hierarchical <- stan(file = 'hierarchical_test.stan', data = model_data_hierarchical, iter = 10000,warmup =1000 , \n            chains = 1, verbose = T )\n\nprint(fit_hierarchical,par=c('mu_sd'))\nplot(fit_hierarchical,par=c('mu_sd'))\n\n#hierarchical test(reparameterization)\n\n\n\nfit_hierarchical_2 <- stan(file = 'hierarchical_test_2.stan', data = model_data_test, iter = 10000,warmup =1000 , \n            chains = 1, verbose = T )\n\nprint(fit_hierarchical_2,par=c('mu_sd'))\nplot(fit_hierarchical_2,par=c('mu_sd'))\n\n#breakpoint test\nTr=150\ny=c(rnorm(100,80,10),rnorm(50,-60,10))\n\nmodel_data_breakpoint<-list(list(Tr= Tr, y=y ))\n\nfit_breakpoint <- stan(file = 'breakpoint_test.stan', data = model_data_breakpoint, iter = 10000,warmup =1000 , \n            chains = 1, verbose = T )\n\nplot(fit_breakpoint,pars = c('lp'))\nprint(fit_breakpoint, pars = c('lp[106]'))\n\n#discrete indicator test (binary)\n\nK=2\nI=100\n\nmu=c(-100,200)\nsigma=c(10,30)\nz<-numeric(I)\ny=numeric(I)\nfor(i in 1:I){\n  z[i]<- rbinom(1,1,.8)\n  y[i]= rnorm(1,mu[(1+z[i])],sigma[(1+z[i])])\n}\ny\nalpha=c(1,1)\nmu0=c(0,0)\nsigma0=100\n\n\n\nmodel_data_indicator<-list(list(K=K,I=I,y=y,alpha=alpha,mu0=mu0,sigma0=sigma0))\n\nfit_indicator <- stan(file = 'discrete_indicator_test.stan', data = model_data_indicator, iter = 10000,warmup =1000 , \n            chains = 1, verbose = T )\nplot(fit_indicator, par=c('log_q_z[40,1]','log_q_z[40,2]'))\nplot(fit_indicator, par=c('log_q_z'))\nz[40]\n\nprint(fit_indicator,par = c(log_q_z[1]))\n\nfit_indicator\npr<-matrix(nrow=100,ncol=2)\nj=1\nfit<-as.matrix(fit_indicator, par = c(paste0('log_q_z[',j,',1]'),paste0('log_q_z[',j,',2]')))\n\nlength(fit[1,])\nfor(j in 1:100){\n  fit<-as.matrix(fit_indicator, par = c(paste0('log_q_z[',j,',1]'),paste0('log_q_z[',j,',2]')))\n  probs<-matrix(nrow=9000,ncol=2)\n  for(i in 1:9000){\n    probs[i,]<-softmax2(fit[i,])\n  }\n\n  pr[j,1]<-mean(probs[,1])\n  pr[j,2]<-mean(probs[,2])\n}\n\n\nhist(pr[,2])\nz.prob<-as.data.frame(pr)\nz.prob\n\ncolnames(z.prob)<- c('zero','one')\nz.prob\nlibrary(ggplot2)\nbargraph(z.prob[4,])\nrbind(z.prob[,1],z)\n\na<-as.matrix(z.prob[,1],nrow=100,ncol=1)\nb<-as.matrix(z.prob[,2],nrow=100,ncol=1)\n\n\ndata.plot<-data.frame(prob=rbind(a,b))\ndata.plot\ndata.plot$val<-rbind(as.matrix(rep(0,100),nrow=100,ncol=1),as.matrix(rep(1,100),nrow=100,ncol=1))\n?geom_col\ngeo\nggplot(data.plot)+\n  geom_col(aes(x=val,y=prob),width=.5)+\n  theme_bw()\n\n\n\nsoftmax2 <- function(x){ exp(x) / sum(exp(x))}\n\nsoftmax2(log_q_z)\n\n\nsoftmax2(c(2,5))\n\nmcmc <- As.mcmc.list(fit_indicator)\n\n\nplot(mcmc)\n",
+    "created" : 1498743024118.000,
+    "dirty" : true,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2985447277",
+    "id" : "7E5405EA",
+    "lastKnownWriteTime" : 1498750641,
+    "last_content_update" : 1498770253048,
+    "path" : "~/shape_sl_greta_model/tests.R",
+    "project_path" : "tests.R",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 5,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

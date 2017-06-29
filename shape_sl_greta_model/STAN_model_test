@@ -1,0 +1,53 @@
+data {
+  int <lower=0> T; // number of presentation
+  int <lower=0> J; // number of subjects 
+  real rtu[J,T]; // response time unpredictable
+  real rtp[J,T]; // response time predictable
+}
+parameters {
+  real <lower=0,upper=1> theta; // mixing proportion
+  real <lower=0> sd_mean; // standard deviation group mean
+  real sd_offset[J]; // the offset of an individual's mean from the group mean
+  real uintercept_mean; // unpredictable intercept group mean
+  real uintercept_offset[J]; // 
+  real pintercept_mean; //predictable intercept group mean
+  real pintercept_offset[J];
+  real pslope_mean; //predictable slope group mean
+  real pslope_offset[J];
+
+}
+transformed parameters {
+  real theta[J];
+  for (j in 1:J)
+    theta[j] = mu + tau * eta[j];
+    
+  real utheta[J,T];
+  real ptheta[J,T];
+  real <lower = 0>sd[J];
+  real a[J];
+  real b[J];
+  real c[J];
+  
+  for(j in J){
+    sd[j] = sd_mean*sd_offset[j]
+    a[]
+    
+    
+    
+    for(t in T){
+    
+    
+    utheta[j,t] = 
+    
+    }
+  }
+
+    
+    
+}
+model {
+  
+
+  target += normal_lpdf(eta | 0, 1);
+  target += normal_lpdf(y | theta, sigma);
+}

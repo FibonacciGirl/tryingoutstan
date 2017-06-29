@@ -1,0 +1,21 @@
+{
+    "collab_server" : "",
+    "contents" : "data {\n  int<lower=1> Tr;\n  real y[Tr];\n}\ntransformed data {\n  real log_unif;\n  log_unif = -log(Tr);\n}\nparameters {\n  real mu1;\n  real mu2;\n}\ntransformed parameters {\n  vector[Tr] lp;\n  lp = rep_vector(log_unif, Tr);\n  for (s in 1:Tr){\n    for (t in 1:Tr){\n      lp[s] = lp[s] + normal_lpdf(y[t] | t < s ? mu1 : mu2 , 10);\n    }\n  }\n}\nmodel {\nmu1 ~ normal_lpdf(0,100);\nmu2 ~ normal_lpdf(0,100);\ntarget += log_sum_exp(lp);\n}\n",
+    "created" : 1498744334598.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "4062164628",
+    "id" : "D8B684A4",
+    "lastKnownWriteTime" : 1498682625,
+    "last_content_update" : 1498682625,
+    "path" : "~/shape_sl_greta_model/breakpoint_test.stan",
+    "project_path" : "breakpoint_test.stan",
+    "properties" : {
+        "tempName" : "Untitled2"
+    },
+    "relative_order" : 6,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "stan"
+}

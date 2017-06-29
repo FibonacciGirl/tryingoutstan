@@ -1,0 +1,21 @@
+{
+    "collab_server" : "",
+    "contents" : "data {\n  int K;\n  int I;\n  real y[I];\n  vector<lower=0>[K] alpha;\n  vector[K] mu0;\n  real <lower=0> sigma0;\n}\n\nparameters {\n  simplex[K] pi;\n  vector[K] mu;\n}\ntransformed parameters {\n  vector[K] log_q_z[I];\n  for(i in 1:I){\n    log_q_z[i]= log(pi);\n    for(k in 1:K){\n      log_q_z[i,k]= log_q_z[i,k] +normal_lpdf(y[i]|mu[k],10);\n    }\n  }\n}\nmodel {\n    target += dirichlet_lpdf(pi|alpha);\n  for(k in 1:K){\n    target += normal_lpdf(mu[k]|mu0[k],sigma0);\n  }\n  for(i in 1:I){\n    target += log_sum_exp(log_q_z[i]);\n  }\n}\n",
+    "created" : 1498741267271.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1971988002",
+    "id" : "ED265671",
+    "lastKnownWriteTime" : 1498743020,
+    "last_content_update" : 1498743020836,
+    "path" : "~/shape_sl_greta_model/discrete_indicator_test.stan",
+    "project_path" : "discrete_indicator_test.stan",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 5,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "stan"
+}
