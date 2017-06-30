@@ -5,15 +5,15 @@ options(mc.cores = parallel::detectCores())
 
 
 
-
+source('make_data.R')
 
 
 
 Tr = 72
-J= 80
-alpha= 27
-beta= .25
-mu0 = 1
+J= 20
+alpha= 100
+beta= 1
+mu0 = 700
 alpha0 = 1
 alpha1 = 1
 tau0= 100
@@ -28,7 +28,7 @@ b1 = 32
 a2 = 2
 b2=32
 
-gammaShRaFromModeSD(50,10)
+gammaShRaFromModeSD(10,1)
 
 priors<- list(proportion = list( fn = 'unif',par1= .5, par2= 2),
               upper.proportion = list( fn = 'unif',par1= .5, par2= 2),
@@ -124,16 +124,60 @@ list(
   a2 = a2,
   b2 = b2
   
+),
+list(
+  Tr = Tr,
+  J=J,
+  rtu = rtu,
+  alpha=alpha,
+  beta=beta,
+  mu0 = mu0,
+  beta0 = beta0,
+  beta1 = beta1,
+  tau0=tau0,
+  alpha0=alpha0,
+  alpha1 = alpha1,
+  a = a,
+  b = b,
+  a0 = a0,
+  b0 = b0,
+  a1 = a1,
+  b1 = b1,
+  a2 = a2,
+  b2 = b2
+  
+),
+list(
+  Tr = Tr,
+  J=J,
+  rtu = rtu,
+  alpha=alpha,
+  beta=beta,
+  mu0 = mu0,
+  beta0 = beta0,
+  beta1 = beta1,
+  tau0=tau0,
+  alpha0=alpha0,
+  alpha1 = alpha1,
+  a = a,
+  b = b,
+  a0 = a0,
+  b0 = b0,
+  a1 = a1,
+  b1 = b1,
+  a2 = a2,
+  b2 = b2
+  
 ))
 
 
+``
+fit.vec <- stan(file = 'rt_unpredictable_vector.stan', data = model.data, iter = 10000,warmup =1000 , 
+            chains = 5, verbose = T)
 
-fit.2 <- stan(file = 'rt_unpredictable_reparam.stan', data = model.data, iter = 10000,warmup =1000 , 
-            chains = 1, verbose = T)
 
-
-mcmc.fit.2 <- As.mcmc.list(fit.2)
-plot(mcmc.fit.2)
+mcmc.fit.vec <- As.mcmc.list(fit.vec)
+plot(mcmc.fit)
 
 plot.data.fits(subset(create.recovery.data(params,t=1:72),model=='power.constant'))
 params

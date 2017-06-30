@@ -9,12 +9,12 @@
     "id" : "D1BFCC5A",
     "lastKnownWriteTime" : 1498751897,
     "last_content_update" : 1498751897376,
-    "path" : "~/shape_sl_hierarchical_models/visualize_models.R",
+    "path" : "~/GitHub/tryingoutstan/shape_sl_hierarchical_models/visualize_models.R",
     "project_path" : "visualize_models.R",
     "properties" : {
         "tempName" : "Untitled3"
     },
-    "relative_order" : 4,
+    "relative_order" : 5,
     "source_on_save" : false,
     "source_window" : "",
     "type" : "r_source"

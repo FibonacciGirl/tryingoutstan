@@ -9,11 +9,11 @@
     "id" : "80085443",
     "lastKnownWriteTime" : 1498767929,
     "last_content_update" : 1498767929129,
-    "path" : "~/shape_sl_hierarchical_models/rt_unpredictable_reparam.stan",
+    "path" : "~/GitHub/tryingoutstan/shape_sl_hierarchical_models/rt_unpredictable_reparam.stan",
     "project_path" : "rt_unpredictable_reparam.stan",
     "properties" : {
     },
-    "relative_order" : 9,
+    "relative_order" : 1,
     "source_on_save" : false,
     "source_window" : "",
     "type" : "stan"

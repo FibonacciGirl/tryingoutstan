@@ -27,17 +27,20 @@ data{
 }
 parameters{
 
+  vector <lower = 0>[J] sigma;
+  vector <lower = 0>[J] u_intercept;
+  vector <lower = 0, upper = 1>[J] u_base;
+  vector <lower = 0>[J] u_rate;
+
   real <lower = 0> sigma_mean;
   real <lower = 0> sigma_var;
-  real <lower = 0> sigma[J];
   
-  real <lower = 0> u_intercept[J];
   real <lower = 0> u_intercept_mean;
   real <lower = 0> u_intercept_var;
-  real <lower = 0, upper = 1> u_base[J];
+  
   real <lower = 0, upper = 1> u_base_mean;
   real <lower = 0> u_base_var;
-  real <lower = 0> u_rate[J];
+  
   real <lower = 0> u_rate_mean;
   real <lower = 0> u_rate_var;
 }
@@ -63,19 +66,16 @@ model{
   target+= gamma_lpdf(u_intercept_var|a0,b0);
   target+= gamma_lpdf(u_base_var|a1,b1);
   target+= gamma_lpdf(u_rate_var|a2,b2);
-
   
+  target+= gamma_lpdf(sigma|sigma_mean,sigma_var);
+  target+= normal_lpdf(u_intercept|u_intercept_mean,u_intercept_var);
+  target+= normal_lpdf(u_base|u_base_mean,u_base_var);
+  target+= normal_lpdf(u_rate| u_rate_mean,u_rate_var);
+
   //likelihood
   for(j in 1:J){
-    
-    target+= gamma_lpdf(sigma[j]|sigma_mean,sigma_var);
-    target+= normal_lpdf(u_intercept[j]|u_intercept_mean,u_intercept_var);
-    target+= normal_lpdf(u_base[j]|u_base_mean,u_base_var);
-    target+= normal_lpdf(u_rate[j]| u_rate_mean,u_rate_var);
-    
     for(t in 1:Tr){
       target += normal_lpdf(rtu[j,t]|mu[j,t],sigma[j]);
     }
-    
   }
 }

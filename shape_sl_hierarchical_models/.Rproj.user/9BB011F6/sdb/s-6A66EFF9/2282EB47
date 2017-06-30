@@ -1,0 +1,21 @@
+{
+    "collab_server" : "",
+    "contents" : "data{\n  //data\n  int Tr; //number of presentations per subject\n  int J; //number of subjects\n  real <lower = 0> rtu[J,Tr]; // unpredictable response time\n  \n  //prior params\n  real <lower = 0> alpha;\n  real <lower = 0> beta;\n  \n  real <lower = 0> mu0;\n  real <lower = 0> tau0;\n  real <lower = 0> alpha0;\n  real <lower = 0> beta0;\n  real <lower = 0> alpha1;\n  real <lower = 0> beta1;\n    \n  real <lower = 0> a;\n  real <lower = 0> b;\n  real <lower = 0> a0;\n  real <lower = 0> b0;\n  real <lower = 0> a1;\n  real <lower = 0> b1;\n  real <lower = 0> a2;\n  real <lower = 0> b2;\n  \n}\nparameters{\n\n  real <lower = 0> sigma_mean;\n  real <lower = 0> sigma_var;\n  real <lower = 0> sigma[J];\n  \n  real <lower = 0> u_intercept[J];\n  real <lower = 0> u_intercept_mean;\n  real <lower = 0> u_intercept_var;\n  real <lower = 0, upper = 1> u_base[J];\n  real <lower = 0, upper = 1> u_base_mean;\n  real <lower = 0> u_base_var;\n  real <lower = 0> u_rate[J];\n  real <lower = 0> u_rate_mean;\n  real <lower = 0> u_rate_var;\n}\ntransformed parameters{\n  \n  real <lower = 0> mu[J,Tr];\n\n  for(j in 1:J){\n    for(t in 1:Tr){\n      mu[j,t]= u_intercept[j]*( 1+ u_base[j]*(t^(-u_rate[j])-1));\n    }\n  }\n}\nmodel{\n  //priors\n  \n  //group prior\n  target+= gamma_lpdf(sigma_mean|alpha,beta);\n  target+= gamma_lpdf(u_intercept_mean|mu0,tau0);\n  target+= gamma_lpdf(u_base_mean|alpha0,beta0);\n  target+= gamma_lpdf(u_rate_mean|alpha1,beta1);\n  target+= gamma_lpdf(sigma_var|a,b);\n  target+= gamma_lpdf(u_intercept_var|a0,b0);\n  target+= gamma_lpdf(u_base_var|a1,b1);\n  target+= gamma_lpdf(u_rate_var|a2,b2);\n\n  \n  //likelihood\n  for(j in 1:J){\n    \n    target+= gamma_lpdf(sigma[j]|sigma_mean,sigma_var);\n    target+= normal_lpdf(u_intercept[j]|u_intercept_mean,u_intercept_var);\n    target+= normal_lpdf(u_base[j]|u_base_mean,u_base_var);\n    target+= normal_lpdf(u_rate[j]| u_rate_mean,u_rate_var);\n    \n    for(t in 1:Tr){\n      target += normal_lpdf(rtu[j,t]|mu[j,t],sigma[j]);\n    }\n    \n  }\n}\n",
+    "created" : 1498850592564.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3049181041",
+    "id" : "2282EB47",
+    "lastKnownWriteTime" : 1498833947,
+    "last_content_update" : 1498833947,
+    "path" : "~/GitHub/tryingoutstan/shape_sl_hierarchical_models/rt_unpredictable.stan",
+    "project_path" : "rt_unpredictable.stan",
+    "properties" : {
+        "tempName" : "Untitled2"
+    },
+    "relative_order" : 9,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "stan"
+}

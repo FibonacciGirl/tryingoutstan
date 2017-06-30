@@ -295,3 +295,6 @@ data.recover<-create.recovery.data(params)
 subset(data.recover,model=='power.power')
 
 plot.data.fits(subject.data=subset(data.recover,model=='power.power'))
+
+
+rtu
