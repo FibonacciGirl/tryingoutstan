@@ -224,8 +224,6 @@ create.recovery.data<-function(par, t, models= c('power.constant',
   for(m in models){
     
     
-    
-    
     if(m == 'power.constant'){
       params<-model.params(par, 'power.constant')
       rtu<-mapply(u.power.model.predict,t, MoreArgs = list(params[1],params[2],params[3]))
@@ -257,8 +255,7 @@ create.recovery.data<-function(par, t, models= c('power.constant',
       t1<-head(t,params[6])
       t2<-tail(t,-params[6])
       
-      print(params)
-      
+
       rtu<-mapply(u.power.model.predict,t,MoreArgs = list(params[1],params[2],params[3]))
       rl1<-mapply(rl.constant.model.predict,t1,MoreArgs = list(params[4]))
       rl2<-mapply(rl.constant.model.predict,t2,MoreArgs = list(params[5]))
@@ -270,22 +267,34 @@ create.recovery.data<-function(par, t, models= c('power.constant',
   }
   
   
-  recovery.data<-expand.grid(t=1:72, model= c( 'power.constant',
-                                               'power.logistic',
-                                               'power.power',
-                                               'piecewise.power.constant'))
+  recovery.data<-expand.grid(t=t, model=models)
   
-  recovery.data$predictable<-c(
-    power.constant.recover.p,
-    power.logistic.recover.p,
-    power.power.recover.p,
-    piecewise.power.constant.recover.p)
+  rtu<-c()
+  rtp<-c()
   
-  recovery.data$unpredictable<-c(
-    power.constant.recover.u,
-    power.logistic.recover.u,
-    power.power.recover.u,
-    piecewise.power.constant.recover.u)
+  for(m in models){
+    if(m == 'power.constant'){
+      rtu<-c(rtu,power.constant.recover.u)
+      rtp<-c(rtp,power.constant.recover.p)
+    }
+    
+    if(m == 'power.logistic'){
+      rtu<-c(rtu,power.logistic.recover.u)
+      rtp<-c(rtp,power.logistic.recover.p)
+    }
+    
+    if(m == 'power.power'){
+      rtu<-c(rtu,power.power.recover.u)
+      rtp<-c(rtp,power.power.recover.p)
+    }
+    if(m == 'piecewise.power.constant'){
+      rtu<-c(rtu,piecewise.power.constant.recover.u)
+      rtp<-c(rtp,piecewise.power.constant.recover.p)
+    }
+  }
+  
+  recovery.data$predictable<-rtp
+  recovery.data$unpredictable<-rtu
   
   return(recovery.data)  
 }
