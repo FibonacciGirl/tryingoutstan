@@ -10,7 +10,7 @@ source('make_data.R')
 gammaShRaFromModeSD(20,10)
 
 Tr = 72
-J= 10
+J= 30
 alpha= 5
 beta= .25
 mu0 = 700
@@ -76,13 +76,17 @@ params<-list()
 
 rtu<-array(dim=c(J,Tr))
 rtp<-array(dim = c(J,Tr))
+rt<-c()
+jj<-c()
+tt<-c()
+pp<-c()
 model<-list()
 
 for(j in 1:J){
 params[[j]]<-generate.parameter.values(priors)
 select<-rbinom(1,1,.8)
 if(select == 1){
-  model[[j]]= c('power.logistic')
+  model[[j]]= c('power.power')
 }
 if(select == 0){
   model[[j]]= c('power.constant')
@@ -90,15 +94,31 @@ if(select == 0){
 rt_data<-create.recovery.data(params[[j]],t=1:72,models=model[[j]])
 rtu[j,]<-rt_data$unpredictable
 rtp[j,]<-rt_data$predictable
+rt<- c(rt,cbind(rtu[j,],rtp[j,]))
+jj<-c(jj,rep(j, 2*Tr))
+tt<-c(tt,rep(1:Tr,2))
+pp<-c(pp,rep(0,Tr),rep(1,Tr))
 }
 
+rt<-c(rt)
+jj<-as.vector(jj)
+tt<-c(tt)
+pp<-as.vector(pp)
+
+N<-length(rt)
+P=1
+tt
 dim(model.data.1[[1]]$rtu)
 
 model.data.1<- list(list(
   Tr = Tr,
   J=J,
-  rtu = rtu,
-  rtp= rtp,
+  P=P,
+  N=N,
+  rt = rt,
+  jj=jj,
+  tt=tt,
+  pp=pp,
   p=p,
   alpha,
   beta,
@@ -118,9 +138,7 @@ model.data.1<- list(list(
   tau5 = tau5,
   mu6 = mu6,
   tau6 = tau6,
-  mu7 = mu7,
-  tau7 = tau7,
-
+  
   alpha0 = alpha0,
   beta0 = beta0,
   alpha1 = alpha1,
@@ -134,30 +152,30 @@ model.data.1<- list(list(
   alpha5 = alpha5,
   beta5=beta5,
   alpha6 = alpha6,
-  beta6=beta6,
-  alpha7 = alpha7,
-  beta7=beta7
+  beta6=beta6
+
   
   )
 )
 
-fit.vec.7 <- stan(file = 'rt_comparison_constantRLR-logisticRLR-Vectorize.stan', data = model.data.1, iter = 10000,warmup =1000 , 
+fit.vec.7 <- stan(file = 'rt_comparison_constantRLR-powerRLR-Vectorize-sparse-student-t.stan', data = model.data.1, iter = 10000,warmup =1000 , 
             chains = 1, verbose = T)
 
 pairs(fit.vec.9)
 
-plot(fit.vec.9,par= c('log_q_z1[1]','log_q_z2[1]'))
-plot(fit.vec.9,par= c('pi0'))
+plot(fit.vec.7,par= c('log_q_z1'))
+plot(fit.vec.7,par= c('pi0'))
+plot(fit.vec.7,par= c('sigma'))
 model
-mcmc.fit.vec.9 <- As.mcmc.list(fit.vec.9)
+mcmc.fit.vec.7 <- As.mcmc.list(fit.vec.7)
 
 
-i=0
-plot(mcmc.fit.vec.9[,(i+1),drop=F])
-summary(mcmc.fit.vec.9[,(i+1),drop=F])
+i=1
+plot(mcmc.fit.vec.7[,(i+1),drop=F])
+summary(mcmc.fit.vec.7[,(i+1),drop=F])
 
-model[[i]]
-params[[i]]$power.power
+model[[19]]
+params[[19]]$power.logistic
 params[[i]]$power.constant
 
 
@@ -176,7 +194,7 @@ pr<-matrix(nrow=J,ncol=2)
 softmax2 <- function(x){ exp(x) / sum(exp(x))}
 for(j in 1:J){
   for(t in 1:Tr){
-  fit<-as.matrix(fit.vec.9, par = c(paste0('log_q_z1[',j,']'),paste0('log_q_z2[',j,']')))
+  fit<-as.matrix(fit.vec.7, par = c(paste0('log_q_z1[',j,']'),paste0('log_q_z2[',j,']')))
   }
   probs<-matrix(nrow=9000,ncol=2)
 

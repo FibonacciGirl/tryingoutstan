@@ -2,8 +2,14 @@ data{
   //data
   int Tr;                       //number of stimuli presentations
   int J;                        //number of subjects
-  real <lower = 0,upper=2000> rtu[J,Tr];   // unpredictable response time
-  real <lower = 0,upper=2000> rtp[J,Tr];   // predictable response time
+  int P;                        //predictable indicator
+  int N;                        // number of data points
+  
+  int <lower = 0,upper=Tr> tt[N];   // response time t index
+  int <lower = 0,upper=J> jj[N];   // response time j index
+  int <lower = 0,upper=P> pp[N];   // response time p index
+  
+  real <lower = 0,upper=2000> rt[N];   // response time
   
   //prior parameters 
 
@@ -38,10 +44,7 @@ data{
   real <lower = 0> beta4;
   
 }
-transformed data{
-  real log_unif;
-  log_unif = -log(Tr);
-}
+
 parameters{
 
 //individual level
@@ -82,20 +85,29 @@ parameters{
 }
 transformed parameters{
   
-  real <lower = 0> rtu_mu[J,Tr];
-  real <lower = 0> rtp_mu1[J,Tr];
-  real <lower = 0> rtp_mu2[J,Tr];
+  real <lower = 0, upper = 2000> rt_mu[N];
+  real <lower = 0, upper = 2000> rt1_mu[N];
   vector[Tr] lp_split[J];
-
+  
   for(j in 1:J){
-    for(t in 1:Tr){
-      rtu_mu[j,t]= rtu_intercept[j]*( 1+ rtu_base[j]*(t^(-rtu_rate[j])-1));
+    lp_split[j] = rep_vector(log(1/Tr),Tr);
+  }
 
-      rtp_mu1[j,t]= rtu_mu[j,t]*rlr_constant_intercept[j];
-      rtp_mu2[j,t]= rtu_mu[j,t]*rlr_constant_intercept2[j];
-      for(s in 1:Tr){
-        lp_split[j,s] = lp_split[j,s] + normal_lpdf(rtp[j,t] | t < s ? rtp_mu1[j,t] : rtp_mu2[j,t] , sigma[j]);
+    for(n in 1:N){
+      rt_mu[n]= rtu_intercept[jj[n]]*( 1+ rtu_base[jj[n]]*((tt[n])^(-rtu_rate[jj[n]])-1));   
+      if(pp[n]==1){
+        for(s in 1:Tr){
+        if(tt[n]<s){
+          rt1_mu[n] = rt_mu[n]*rlr_constant_intercept[jj[n]];
+        }
+        if(tt[n]>=s){
+          rt1_mu[n] = rt_mu[n]*rlr_constant_intercept2[jj[n]];
+        }
+        lp_split[jj[n],s] = lp_split[jj[n],s] +normal_lpdf(rt[n]|rt1_mu[n], sigma[jj[n]]);
+        }
       }
+      else{
+        rt1_mu[n] = 0;
     }
   }
 }
@@ -105,7 +117,7 @@ model{
   //group prior
   target+= gamma_lpdf(sigma_mean|alpha,beta);
   target+= gamma_lpdf(rtu_intercept_mean|mu0,tau0);
-  target+= gamma_lpdf(rtu_base_mean|mu1,tau1);
+  target+= beta_lpdf(rtu_base_mean|mu1,tau1);
   target+= gamma_lpdf(rtu_rate_mean|mu2,tau2);
   target+= gamma_lpdf(sigma_var|a,b);
   target+= gamma_lpdf(rtu_intercept_var|alpha0,beta0);
@@ -119,7 +131,7 @@ model{
 
   
   
-  target+= gamma_lpdf(sigma|sigma_mean,sigma_var);
+  target+= normal_lpdf(sigma|sigma_mean,sigma_var);
   target+= normal_lpdf(rtu_intercept|rtu_intercept_mean,rtu_intercept_var);
   target+= normal_lpdf(rtu_base|rtu_base_mean,rtu_base_var);
   target+= normal_lpdf(rtu_rate| rtu_rate_mean,rtu_rate_var);
@@ -128,10 +140,14 @@ model{
 
 
   //likelihood
-  for(j in 1:J){
-    for(t in 1:Tr){
-      target += normal_lpdf(rtu[j,t]|rtu_mu[j,t],sigma[j]);
-      target += lp_split[t,j];
+  
+  for(n in 1:N){
+    if(pp[n]==0){
+      target += normal_lpdf(rt[n]|rt_mu[n],sigma[jj[n]]);
     }
+  }
+  for(j in 1:J){
+    target += log_sum_exp(lp_split[j]);
+
   }
 }
