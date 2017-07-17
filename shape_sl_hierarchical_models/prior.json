@@ -1,0 +1,1 @@
+{"intercept":{"fn":["gamma"],"par1":[800],"par2":[200]},"base":{"fn":["unif"],"par1":[0],"par2":[1]},"rate":{"fn":["gamma"],"par1":[0.3],"par2":[0.1]},"proportion":{"fn":["gamma"],"par1":[1],"par2":[0.5]},"jump":{"fn":["exp"],"par1":[20],"par2":[1]},"split":{"fn":["unif"],"par1":[0],"par2":[72]},"sigma":{"fn":["gamma"],"par1":[25],"par2":[5]}}

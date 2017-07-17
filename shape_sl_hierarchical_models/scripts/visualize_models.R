@@ -51,23 +51,19 @@ plot.data.fits<-function(subject.data=NA, fit=NULL,   model=  c('power.constant'
         params<-model.params(fit, 'piecewise.power.constant')
         params<-head(params,-1)
       
-        rtp<-numeric(length(t))
-        t1<-head(t,params[6])
-        t2<-tail(t,-params[6])
-        
-        print(t1)
-        print(t2)
-        
-        
+        print(params)
+        print(t)
+
         rtu<-mapply(u.power.model.predict,t,MoreArgs = list(params[1],params[2],params[3]))
-        rl1<-mapply(rl.constant.model.predict,t1,MoreArgs = list(params[4]))
-        rl2<-mapply(rl.constant.model.predict,t2,MoreArgs = list(params[5]))
-  
-        
-        print(rl2)
-        
-        rtp[t1]<-rl1[t1]*rtu[t1]
-        rtp[t2]<-rl2[t2]*rtu[t2]
+        if(t<params[6]){
+        rl<-mapply(rl.constant.model.predict,t,MoreArgs = list(params[4]))
+        }
+        if(t>params[6]){
+        rl<-mapply(rl.constant.model.predict,t,MoreArgs = list(params[5]))
+        }
+          
+        rtp<-rl*rtu
+          
         return(rtp)
       }
     },line.fit$model, line.fit$t)
@@ -134,8 +130,9 @@ plot.data.fits<-function(subject.data=NA, fit=NULL,   model=  c('power.constant'
     
     if(!is.na(subject.data)){
     sub<- unique(subject.data$subject)
+  
     
-    title<-paste('Subject', sub)
+    title<-paste('Subject', as.character(sub))
     subject.pred<-data.frame(t= subject.data$t, rt= subject.data$predictable, type = rep('predictable',length(subject.data$t)))
     subject.unpred<-data.frame(t= subject.data$t, rt = subject.data$unpredictable, type = rep('unpredictable',length(subject.data$t)))
     sub.data<-rbind(subject.pred,subject.unpred)
@@ -145,7 +142,7 @@ plot.data.fits<-function(subject.data=NA, fit=NULL,   model=  c('power.constant'
     p<-ggplot()+
       geom_point(data=sub.data,aes(x=t, y =rt,col=type))+
       geom_line(data=plot.data,aes(x=t, y =rt,col=type,linetype=model ))+
-      # ggtitle(title)+
+      ggtitle(title)+
       theme_bw()
     
     }
@@ -171,6 +168,11 @@ plot.data.fits<-function(subject.data=NA, fit=NULL,   model=  c('power.constant'
   }
   # 
   else{
+    s<- unique(subject.data$subject)
+    
+    
+    title<-paste('Subject', s)
+    
     subject.pred<-data.frame(t= subject.data$t, rt= subject.data$predictable, type = rep('predictable',length(subject.data$t)))
     subject.unpred<-data.frame(t= subject.data$t, rt = subject.data$unpredictable, type = rep('unpredictable',length(subject.data$t)))
     
@@ -193,8 +195,6 @@ plot.data.fits<-function(subject.data=NA, fit=NULL,   model=  c('power.constant'
 
 
 
-
-plot.data.fits(subject.data=)
 
 
 ##still need to fix to plot the figure

@@ -13,55 +13,55 @@ prior.1<-list('intercept' = list(fn = 'gamma', par1 =800, par2 =200 ),
               'base' = list(fn = 'unif', par1 =0, par2=1),
               'rate' = list(fn = 'gamma', par1= .3,par2 =.1),
               'sigma' = list(fn = 'gamma', par1=25, par2=5),
-              'jump.proportion' = list(fn = 'exp', par1=20, par2=1),
+              'jump' = list(fn = 'exp', par1=20, par2=1),
               'split' = list(fn = 'unif', par1=0, par2=72) )
 
 write_json(prior.1,'prior.1.json')
 
-extract.prior<-function(json){
+extract.prior<-function(priors){
 
-  priors<-read_json(json)
-
-  n<-length(priors)
   prior<-list()
+  i=0
   
-  for(i in 1:n){
+  for(param in names(priors)){
+    i=i+1
     
-    if(i == 1){
+    if(param == 'intercept'){
       fn <- priors$intercept$fn[[1]]
       params<- c(as.numeric(priors$intercept$par1), as.numeric(priors$intercept$par2))
       prior[[i]]<-c(fn,params,'Intercept Prior')  
     }
-    if(i == 2){
+    if(param == 'proportion'){
       fn <- priors$proportion$fn[[1]]
       params<- c(as.numeric(priors$proportion$par1), as.numeric(priors$proportion$par2))
       prior[[i]]<-c(fn, params,'Proprotion Prior')    
     }
-    if(i == 3){
+    if(param == 'base'){
       fn <- priors$base$fn[[1]]
       params<- c(as.numeric(priors$base$par1), as.numeric(priors$base$par2))
       prior[[i]]<-c(fn,params, 'Base Prior')  
     }
-    if(i == 3){
+    if(param == 'rate'){
       fn <- priors$rate$fn[[1]]
       params<- c(as.numeric(priors$rate$par1), as.numeric(priors$rate$par2))
       prior[[i]]<-c(fn,params, 'Rate Prior')  
     }
-    if(i == 4){
+    if(param == 'sigma'){
       fn <- priors$sigma$fn[[1]]
       params<- c(as.numeric(priors$sigma$par1), as.numeric(priors$sigma$par2))
       prior[[i]]<-c(fn, params,'Sigma Prior')    
     }
-    if(i == 5){
-      fn <- priors$jump.proportion$fn[[1]]
-      params<- c(as.numeric(priors$jump.proportion$par1), as.numeric(priors$jump.proportion$par2))
+    if(param == 'jump'){
+      fn <- priors$jump$fn[[1]]
+      params<- c(as.numeric(priors$jump$par1), as.numeric(priors$jump$par2))
       prior[[i]]<-c(fn, params,'Jump Proprotion Prior')    
     }
-    if(i == 6){
+    if(param == 'split'){
       fn <- priors$split$fn[[1]]
       params<- c(as.numeric(priors$split$par1), as.numeric(priors$split$par2))
       prior[[i]]<-c(fn, params,'Split Prior')    
     }
+
   }
   return(prior)
 }
@@ -74,7 +74,7 @@ extract.prior<-function(json){
 
 from.to<-function(list,n.params){
   n.priors<-length(list)
-  print(n.priors)
+
   from<-array(dim=c(n.priors,n.params))
   to<-array(dim=c(n.priors,n.params))
   out<-data.frame(from=numeric(length=n.params),to=numeric(length=n.params))
@@ -85,7 +85,7 @@ from.to<-function(list,n.params){
       for(i in 1:n.priors){
         
         
-        prior<-list[[i]]
+        prior<-read_json(list[[i]])
         
         prior<-extract.prior(prior)
         pr<-prior[[j]]
@@ -125,11 +125,11 @@ from.to<-function(list,n.params){
   }
   else{
     
-    prior<-list[[1]]
+    prior<-read_json(list[[1]])
     
     prior<-extract.prior(prior)
+
     
-    print(prior)
     for(j in 1:n.params){
 
       pr<-prior[[j]]
@@ -248,7 +248,8 @@ visualize.priors.multi<-function(list){
   if(n.priors != 1){
     
     for(i in 1:n.priors){
-      prior[[i]]<-extract.prior(list[[i]])
+      pr<-read_json(list[[i]])
+      prior[[i]]<-extract.prior(pr)
     }
     
     n.params<-length(prior[[1]])
@@ -274,7 +275,8 @@ visualize.priors.multi<-function(list){
   }
   
   else{
-    prior<-extract.prior(list[[1]])
+    pr<-read_json(list[[1]])
+    prior<-extract.prior(pr)
     n.params<-length(prior)
     
     from<-from.to(list,n.params)$from
@@ -293,6 +295,3 @@ visualize.priors.multi<-function(list){
 }
 
 
-read_json('prior.1.json')
-
-grid.arrange(grobs = visualize.priors.multi(list('prior.1.json')) )

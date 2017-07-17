@@ -13,6 +13,7 @@ data{
   real <lower = 0,upper=2000> rt[N];   // response time
 
 
+
   //HYPER PARAMETERS
   simplex[2] p_prior;                 //model selection prior
   
@@ -62,8 +63,12 @@ data{
   real <lower = 0> alpha7;
   real <lower = 0> beta7;
   
+  
+
+  
 }
 parameters{
+  real <lower = 0> nu; //degrees of freedom
   
   //model selection parameter
   simplex[2] p;
@@ -135,12 +140,12 @@ transformed parameters{
     
     
     log_q_z1[j] = log(pi0[j,1]) 
-                  +  normal_lpdf(rlr_constant_intercept[j]| rlr_constant_intercept_mean, rlr_constant_intercept_var);
+                  +  student_t_lpdf(rlr_constant_intercept[j]| nu,rlr_constant_intercept_mean, rlr_constant_intercept_var);
     log_q_z2[j] = log(pi0[j,2]) 
-                  + normal_lpdf(rlr_logistic_intercept[j]|rlr_logistic_intercept_mean,rlr_logistic_intercept_var)
-                  + normal_lpdf(rlr_logistic_rate[j]|rlr_logistic_rate_mean,rlr_logistic_rate_var)
-                  + normal_lpdf(rlr_logistic_intercept2[j]| rlr_logistic_intercept2_mean,rlr_logistic_intercept2_var)
-                  + normal_lpdf(rlr_logistic_split[j]| rlr_logistic_split_mean,rlr_logistic_split_var);
+                  + student_t_lpdf(rlr_logistic_intercept[j]|nu,rlr_logistic_intercept_mean,rlr_logistic_intercept_var)
+                  + student_t_lpdf(rlr_logistic_rate[j]|nu, rlr_logistic_rate_mean,rlr_logistic_rate_var)
+                  + student_t_lpdf(rlr_logistic_intercept2[j]|nu, rlr_logistic_intercept2_mean,rlr_logistic_intercept2_var)
+                  + student_t_lpdf(rlr_logistic_split[j]|nu, rlr_logistic_split_mean,rlr_logistic_split_var);
   }
 
   for(n in 1:N){

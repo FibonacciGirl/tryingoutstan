@@ -17,10 +17,15 @@ prior.1<-list('intercept' = list(fn = 'gamma', par1 =800, par2 =200 ),
               'base.1' = list(fn = 'unif', par1 =0, par2=1),
               'rate.1' = list(fn = 'exp', par1= 3,par2 =.1),
               'sigma' = list(fn = 'gamma', par1=25, par2=5),
-              'jump.proportion' = list(fn = 'exp', par1=20, par2=1),
+              'jump.proportion' = list(fn = 'unif', par1=0, par2=1),
               'split' = list(fn = 'unif', par1=0, par2=72) )
 
 write_json(prior.1,'prior.1.json')
+
+
+#plot priors
+prior.vals<-
+
 
 grid.arrange(grobs = visualize.priors.multi(list('prior.1.json')))
 
@@ -29,9 +34,20 @@ params<-generate.parameter.values(read_json('prior.1.json'))
 
 
 
-
-
+#plot model types
 plot.data.fits(fit = params, model = c('power.constant'))
 plot.data.fits(fit = params, model = c('power.power'))
 plot.data.fits(fit = params, model = c('power.logistic'))
 plot.data.fits(fit = params, model = c('piecewise.power.constant'))
+
+
+#plot subject examples
+
+plot.data.fits(subject.data = subject)
+
+subject<-subset(subject.data, subject == i)
+
+
+
+subject.data<- subject.data %>% spread('p','rt')
+colnames(subject.data) <- c('subject', 't', 'unpredictable','predictable')

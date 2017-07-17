@@ -14,7 +14,7 @@ data{
 
   
   //prior parameters 
-  simplex[2] p;                 //model selection prior
+  simplex[2] p_prior;                 //model selection prior
   
   
   real <lower = 0> alpha;       //sigma prior
@@ -57,12 +57,14 @@ data{
   real <lower = 0> alpha6;
   real <lower = 0> beta6;
   
-  real <lower = 0> nu;
+  real <lower = 0> nu; //degrees of freedom
   
 }
 parameters{
   //model selection parameter
-  simplex[2] pi0;
+  simplex[2] p;
+  simplex[2] pi0[J];
+
   
   //individual level
 
@@ -123,9 +125,9 @@ transformed parameters{
   
   
     for(j in 1:J){
-      log_q_z1[j] = log(pi0[1])
+      log_q_z1[j] = log(pi0[j,1])
                     + student_t_lpdf(rlr_constant_intercept[j]|nu, rlr_constant_intercept_mean, rlr_constant_intercept_var);
-      log_q_z2[j] = log(pi0[2])
+      log_q_z2[j] = log(pi0[j,2])
                     + student_t_lpdf(rlr_power_intercept[j]|nu,rlr_power_intercept_mean,rlr_power_intercept_var)
                     + student_t_lpdf(rlr_power_base[j]|nu,rlr_power_base_mean,rlr_power_base_var)
                     + student_t_lpdf(rlr_power_rate[j]|nu, rlr_power_rate_mean,rlr_power_rate_var);
@@ -166,7 +168,7 @@ transformed parameters{
 model{
   
   //model selection prior
-  target += dirichlet_lpdf(pi0|p);
+  target += dirichlet_lpdf(p|p_prior);
   
   //group priors
   
@@ -216,6 +218,8 @@ model{
     }
   }
   for(j in 1:J){
+      target += dirichlet_lpdf(pi0[j]|p);
+    
       target += log_sum_exp(log_q_z1[j],log_q_z2[j]);
 
     }

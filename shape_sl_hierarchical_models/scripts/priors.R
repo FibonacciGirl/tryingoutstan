@@ -19,9 +19,9 @@ prior<-function(par,type){
     fn <- priors$sigma$fn[[1]]
     params<- c(as.numeric(priors$sigma$par1), as.numeric(priors$sigma$par2))
   }
-  if(type == 'jump.proportion'){
-    fn <- priors$jump.proportion$fn
-    params<- c(as.numeric(priors$jump.proportion$par1), as.numeric(priors$jump.proportion$par2))
+  if(type == 'jump'){
+    fn <- priors$jump$fn
+    params<- c(as.numeric(priors$jump$par1), as.numeric(priors$jump$par2))
   }
   if(type == 'split'){
     fn <- priors$split$fn[[1]]
@@ -72,7 +72,7 @@ unif<-function(par, params){
   return(dunif(par, params[1], params[2], log=T))
 }
 
-unif<-function(par, params){
+exponential<-function(par, params){
   return(dexp(par, params[1], log=T))
 }
 
