@@ -2,6 +2,12 @@ source('scripts/visualize_models.R')
 source('scripts/visualize_priors multi.R')
 source('scripts/make_data.R')
 
+library(rstan)
+rstan_options(auto_write = TRUE)
+options(mc.cores = parallel::detectCores())
+
+
+
 # enter values for prior distributions on types of parameters 
 
 prior<-list('intercept' = list(fn = 'gamma', par1 =800, par2 =200 ), 
