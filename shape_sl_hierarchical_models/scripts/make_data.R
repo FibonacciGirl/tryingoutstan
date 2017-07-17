@@ -2,6 +2,10 @@
 source('scripts/model_predict.R')
 source('scripts/DBDA2E-utilities.R')
 
+# 
+# list(power.constant = list(intercept = , base = , rate = , proportion = , sigma = ),
+#      power.power = list(intercept = , base = , rate = , proportion = , base.1 = ,rate.1 = , sigma = ),
+#      power.logistic = list(intercept = , base = , rate = , upper.proportion = , lower.proportion = , rate.1 = , sigma =  ))
 
 model.params<-function(fit,m){
   
@@ -136,6 +140,7 @@ r.prior<-function(type, priors){
     params<- c(as.numeric(priors$lower.proportion$par1), as.numeric(priors$lower.proportion$par2))
   }
   
+  print(fn)
   
   if(fn == 'normal'){
     return(r.prior.fn(r.normal,params))
@@ -190,8 +195,8 @@ generate.parameter.values<-function(priors){
     power.logistic = list(intercept = r.prior('intercept',priors), 
                           base= r.prior('base',priors), 
                           rate= - r.prior('rate',priors),
-                          upper.proportion = r.prior('upper.proportion',priors), 
-                          lower.proportion = r.prior('lower.proportion',priors), 
+                          upper.proportion = r.prior('proportion',priors), 
+                          lower.proportion = r.prior('base.1',priors), 
                           rate.1= -r.prior('rate',priors),
                           split = r.prior('split',priors),
                           sigma=r.prior('sigma',priors)) )

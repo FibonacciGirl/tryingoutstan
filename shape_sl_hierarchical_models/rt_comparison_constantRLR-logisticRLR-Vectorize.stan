@@ -1,19 +1,19 @@
 data{
-  //data
-  int Tr;                       //number of stimuli presentations
+  
+  //SUPPORT FOR POSTERIOR  
+  int Tr;                       //total number of stimuli presentations
   int J;                        //number of subjects
   int P;                        //predictable indicator
-  int N;                        // number of data points
+  int N;                        //number of data points
   
-  int <lower = 0,upper=Tr> tt[N];   // response time t index
-  int <lower = 0,upper=J> jj[N];   // response time j index
-  int <lower = 0,upper=P> pp[N];   // response time p index
-
+  int <lower = 0,upper=Tr> tt[N];   // trial index
+  int <lower = 0,upper=J> jj[N];   // subject index
+  int <lower = 0,upper=P> pp[N];   // predictable index
   
   real <lower = 0,upper=2000> rt[N];   // response time
 
-  //prior parameters 
 
+  //HYPER PARAMETERS
   simplex[2] p;                 //model selection prior
   
   
@@ -42,17 +42,17 @@ data{
   real <lower = 0> alpha3;
   real <lower = 0> beta3;
   
-  real <lower = 0> mu4;         //rlr logistic intercept1 prior
+  real <lower = 0> mu4;         //rlr logistic proportion prior
   real <lower = 0> tau4;
   real <lower = 0> alpha4;
   real <lower = 0> beta4;
   
-  real <lower = 0> mu5;         //rlr logistic base prior
+  real <lower = 0> mu5;         //rlr logistic proportion 2 prior
   real <lower = 0> tau5;
   real <lower = 0> alpha5;
   real <lower = 0> beta5;
   
-  real <lower = 0> mu6;         //rlr logistic intercept2 prior
+  real <lower = 0> mu6;         //rlr logistic base prior
   real <lower = 0> tau6;
   real <lower = 0> alpha6;
   real <lower = 0> beta6;
@@ -64,11 +64,12 @@ data{
   
 }
 parameters{
-//model selection parameter
+  
+  //model selection parameter
   simplex[2] pi0;
 
   
-//individual level
+//INDIVIDUAL LEVEL PARAMETERS
   vector <lower = 0>[J] sigma;
   
   //rtu
@@ -81,11 +82,11 @@ parameters{
   
   //rlr logistic
   vector <lower = 0>[J] rlr_logistic_intercept;
-  vector <lower = 0, upper = 1>[J] rlr_logistic_base;
-  vector <lower = 0>[J] rlr_logistic_intercept2;
+  vector <lower = 0>[J] rlr_logistic_rate;
+  vector <lower = 0, upper = 1>[J] rlr_logistic_intercept2;
   vector <lower = 0 , upper = Tr>[J] rlr_logistic_split;
   
-//group level
+//GROUP LEVEL PARAMETERS
   real <lower = 0> sigma_mean;
   real <lower = 0> sigma_var;
   
@@ -100,17 +101,17 @@ parameters{
   real <lower = 0> rtu_rate_var;
   
   //rlr cosntant
-  real <lower = 0, upper = 2000>  rlr_constant_intercept_mean;
+  real <lower = 0, upper = 5>  rlr_constant_intercept_mean;
   real <lower = 0>  rlr_constant_intercept_var;
   
   //rlr logistic
-  real <lower = 0,upper=2000> rlr_logistic_intercept_mean;
+  real <lower = 0,upper=5> rlr_logistic_intercept_mean;
   real <lower = 0> rlr_logistic_intercept_var;
   
-  real <lower = 0, upper = 1> rlr_logistic_base_mean;
-  real <lower = 0> rlr_logistic_base_var;
+  real <lower = 0, upper = 1> rlr_logistic_rate_mean;
+  real <lower = 0> rlr_logistic_rate_var;
   
-  real <lower = 0> rlr_logistic_intercept2_mean;
+  real <lower = 0, upper = rlr_logistic_intercept_mean> rlr_logistic_intercept2_mean;
   real <lower = 0> rlr_logistic_intercept2_var;
   
   real <lower = 0> rlr_logistic_split_mean;
@@ -120,99 +121,93 @@ parameters{
 
 transformed parameters{
   
-  real <lower = 0, upper = 2000> rt_mu[N];
-  real <lower = 0, upper = 2000> rt1_mu[N];
-  real <lower = 0, upper = 2000> rt2_mu[N];
-  //real log_q_z1[N];
-  //real log_q_z2[N];
+  real <lower = 0, upper = 2000> rt_mu[N]; //likelihood rtu mean
+  real <lower = 0, upper = 2000> rt1_mu[N]; //likelihood rlr constant mean
+  real <lower = 0, upper = 2000> rt2_mu[N]; //likelihood rlr logistic mean
   
-  vector[J] log_q_z1;
+  //log likelihood summation over indicator 
+  vector[J] log_q_z1; 
   vector[J] log_q_z2;
   
   
-    for(j in 1:J){
-      log_q_z1[j] = log(pi0[1]);
-      log_q_z2[j] = log(pi0[2]);
-    }
-
-  
-  for(n in 1:N){
- 
-          
-          
-          rt_mu[n]= rtu_intercept[jj[n]]*( 1+ rtu_base[jj[n]]*((tt[n])^(-rtu_rate[jj[n]])-1));   
-            if(pp[n]==1){
-
-              rt1_mu[n] = rt_mu[n]*rlr_constant_intercept[jj[n]];
-              rt2_mu[n] = rt_mu[n]*(rlr_logistic_intercept[jj[n]]+((rlr_logistic_intercept[jj[n]]*rlr_logistic_intercept2[jj[n]]-rlr_logistic_intercept[jj[n]])/(1+exp(rlr_logistic_base[jj[n]]*(tt[n]-rlr_logistic_split[jj[n]])))));
-              //log_q_z1[n] = log(pi0[1]) + normal_lpdf(rt[n]|rt1_mu[n],sigma[jj[n]]);
-              //log_q_z2[n] = log(pi0[2]) + normal_lpdf(rt[n]|rt2_mu[n],sigma[jj[n]]);
-
-              log_q_z1[jj[n]] = log_q_z1[jj[n]] + normal_lpdf(rt[n]|rt1_mu[n],sigma[jj[n]]);
-              log_q_z2[jj[n]] = log_q_z2[jj[n]] + normal_lpdf(rt[n]|rt2_mu[n],sigma[jj[n]]);
-            }
-            else{
-              rt1_mu[n] = 0;
-              rt2_mu[n] = 0;
-              //log_q_z1[n] = 0;
-              //log_q_z2[n] = 0;
-
-            }
-      
+  for(j in 1:J){
+    log_q_z1[j] = log(pi0[1]) 
+                  +  normal_lpdf(rlr_constant_intercept[j]| rlr_constant_intercept_mean, rlr_constant_intercept_var);
+    log_q_z2[j] = log(pi0[2]) 
+                  + normal_lpdf(rlr_logistic_intercept[j]|rlr_logistic_intercept_mean,rlr_logistic_intercept_var)
+                  + normal_lpdf(rlr_logistic_rate[j]|rlr_logistic_rate_mean,rlr_logistic_rate_var)
+                  + normal_lpdf(rlr_logistic_intercept2[j]| rlr_logistic_intercept2_mean,rlr_logistic_intercept2_var)
+                  + normal_lpdf(rlr_logistic_split[j]| rlr_logistic_split_mean,rlr_logistic_split_var);
   }
-  
+
+  for(n in 1:N){
+    rt_mu[n]= rtu_intercept[jj[n]]*( 1+ rtu_base[jj[n]]*((tt[n])^(-rtu_rate[jj[n]])-1));   
+    if(pp[n]==1){
+      rt1_mu[n] = rt_mu[n]*rlr_constant_intercept[jj[n]];
+      rt2_mu[n] = rt_mu[n]*(rlr_logistic_intercept[jj[n]]+(rlr_logistic_intercept2[jj[n]]-rlr_logistic_intercept[jj[n]])/(1+exp(rlr_logistic_rate[jj[n]]*(tt[n]-rlr_logistic_split[jj[n]]))));
+
+      log_q_z1[jj[n]] = log_q_z1[jj[n]] + normal_lpdf(rt[n]|rt1_mu[n],sigma[jj[n]]);
+
+              
+      log_q_z2[jj[n]] = log_q_z2[jj[n]] + normal_lpdf(rt[n]|rt2_mu[n],sigma[jj[n]]);
+
+    }
+    else{
+      rt1_mu[n] = 0;
+      rt2_mu[n] = 0;
+    }
+  }
 }
 model{
-
-
-  
-//group priors
-  
   //model selection prior
   target += dirichlet_lpdf(pi0|p);
   
+//GROUP PRIOR CONTRIBUTION
+  
+  //sigma
   target+= gamma_lpdf(sigma_mean|alpha,beta);
   target+= gamma_lpdf(sigma_var|a,b);
   
   //rtu
   target+= gamma_lpdf(rtu_intercept_mean|mu0,tau0);
-  target+= gamma_lpdf(rtu_base_mean|mu1,tau1);
+  target+= beta_lpdf(rtu_base_mean|mu1,tau1);
   target+= gamma_lpdf(rtu_rate_mean|mu2,tau2);
   
 
   target+= gamma_lpdf(rtu_intercept_var|alpha0, beta0);
   target+= gamma_lpdf(rtu_base_var|alpha1,beta1);
   target+= gamma_lpdf(rtu_rate_var|alpha2,beta2);
+  
+  //rlr logistic  
+  target += gamma_lpdf(rlr_logistic_intercept_mean|mu4,tau4);
+  target += exponential_lpdf(rlr_logistic_rate_mean|mu5);
+  target += beta_lpdf(rlr_logistic_intercept2_mean|mu6,tau6);
+  target += uniform_lpdf(rlr_logistic_split_mean|mu7,tau7);  
+  
+  target += gamma_lpdf(rlr_logistic_intercept_var|alpha4, beta4);
+  target += gamma_lpdf(rlr_logistic_rate_var|alpha5,beta5);
+  target += gamma_lpdf(rlr_logistic_intercept2_var|alpha6,beta6);
+  target += gamma_lpdf(rlr_logistic_split_var|alpha7,beta7); 
+
+  //rlr constant
+  target += gamma_lpdf(rlr_constant_intercept_mean|mu3,tau3);
+  
+  target += gamma_lpdf(rlr_constant_intercept_var|alpha3,beta3);
 
   
-//indidvidual priors
-  target+= normal_lpdf(sigma|sigma_mean,sigma_var);
-  
+//INDIVIDUAL PRIOR CONTRIBUTION
+
+
   //rtu
   target+= normal_lpdf(rtu_intercept|rtu_intercept_mean,rtu_intercept_var);
   target+= normal_lpdf(rtu_base|rtu_base_mean,rtu_base_var);
   target+= normal_lpdf(rtu_rate| rtu_rate_mean,rtu_rate_var);
   
   
-  target += normal_lpdf(rlr_constant_intercept| rlr_constant_intercept_mean, rlr_constant_intercept_var);
 
-  target += normal_lpdf(rlr_logistic_intercept|rlr_logistic_intercept_mean,rlr_logistic_intercept_var);
-  target += normal_lpdf(rlr_logistic_base|rlr_logistic_base_mean,rlr_logistic_base_var);
-  target += normal_lpdf(rlr_logistic_intercept2| rlr_logistic_intercept2_mean,rlr_logistic_intercept2_var);
-  target += normal_lpdf(rlr_logistic_split| rlr_logistic_split_mean,rlr_logistic_split_var);
-  
-  target += gamma_lpdf(rlr_logistic_intercept_mean|mu4,tau4);
-  target += beta_lpdf(rlr_logistic_base_mean|mu5,tau5);
-  target += gamma_lpdf(rlr_logistic_intercept2_mean|mu6,tau6);
-  target += gamma_lpdf(rlr_logistic_split_mean|mu7,tau7);  
-  target += gamma_lpdf(rlr_logistic_intercept_var|alpha4, beta4);
-  target += gamma_lpdf(rlr_logistic_base_var|alpha5,beta5);
-  target += gamma_lpdf(rlr_logistic_intercept2_var|alpha6,beta6);
-  target += gamma_lpdf(rlr_logistic_split_var|alpha7,beta7); 
 
-  
-  target += gamma_lpdf(rlr_constant_intercept_mean|mu3,tau3);
-  target += gamma_lpdf(rlr_constant_intercept_var|alpha3,beta3);
+
+
   
 
   //likelihood
@@ -220,9 +215,6 @@ model{
   for(n in 1:N){
     if(pp[n]==0){
       target += normal_lpdf(rt[n]|rt_mu[n],sigma[jj[n]]);
-    }
-    else{
-      //target += log_sum_exp(log_q_z1[n],log_q_z2[n]);
     }
   }
   for(j in 1:J){

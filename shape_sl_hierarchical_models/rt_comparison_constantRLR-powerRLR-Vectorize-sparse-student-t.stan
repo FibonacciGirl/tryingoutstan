@@ -123,8 +123,13 @@ transformed parameters{
   
   
     for(j in 1:J){
-      log_q_z1[j] = log(pi0[1]);
-      log_q_z2[j] = log(pi0[2]);
+      log_q_z1[j] = log(pi0[1])
+                    + student_t_lpdf(rlr_constant_intercept[j]|nu, rlr_constant_intercept_mean, rlr_constant_intercept_var);
+      log_q_z2[j] = log(pi0[2])
+                    + student_t_lpdf(rlr_power_intercept[j]|nu,rlr_power_intercept_mean,rlr_power_intercept_var)
+                    + student_t_lpdf(rlr_power_base[j]|nu,rlr_power_base_mean,rlr_power_base_var)
+                    + student_t_lpdf(rlr_power_rate[j]|nu, rlr_power_rate_mean,rlr_power_rate_var);
+  
     }
 
   
@@ -142,7 +147,10 @@ transformed parameters{
               //log_q_z2[n] = log(pi0[2]) + normal_lpdf(rt[n]|rt2_mu[n],sigma[jj[n]]);
 
               log_q_z1[jj[n]] = log_q_z1[jj[n]] + normal_lpdf(rt[n]|rt1_mu[n],sigma[jj[n]]);
+
+              
               log_q_z2[jj[n]] = log_q_z2[jj[n]] + normal_lpdf(rt[n]|rt2_mu[n],sigma[jj[n]]);
+
             }
             else{
               rt1_mu[n] = 0;
@@ -185,12 +193,7 @@ model{
   target+= student_t_lpdf(rtu_rate|nu, rtu_rate_mean,rtu_rate_var);
   
   
-  target += student_t_lpdf(rlr_constant_intercept|nu, rlr_constant_intercept_mean, rlr_constant_intercept_var);
-  
-  target += student_t_lpdf(rlr_power_intercept|nu,rlr_power_intercept_mean,rlr_power_intercept_var);
-  target += student_t_lpdf(rlr_power_base|nu,rlr_power_base_mean,rlr_power_base_var);
-  target += student_t_lpdf(rlr_power_rate|nu, rlr_power_rate_mean,rlr_power_rate_var);
-  
+
   target += gamma_lpdf(rlr_power_intercept_mean|mu4,tau4);
   target += gamma_lpdf(rlr_power_base_mean|mu5,tau5);
   target += gamma_lpdf(rlr_power_rate_mean|mu6,tau6);
@@ -229,7 +232,7 @@ generated quantities{
       log_lik[n]= normal_lpdf(rt[n]|rt_mu[n],sigma[jj[n]]);
     }
     if(pp[n] == 1){
-      log_lik[n] =log_sum_exp( normal_lpdf(rt[n]|rt2_mu[n],sigma[jj[n]]), normal_lpdf(rt[n]|rt1_mu[n],sigma[jj[n]]) );
+      log_lik[n] =log_sum_exp(normal_lpdf(rt[n]|rt2_mu[n],sigma[jj[n]]), normal_lpdf(rt[n]|rt1_mu[n],sigma[jj[n]]) );
     }
   }
 }
