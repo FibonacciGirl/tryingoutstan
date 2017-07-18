@@ -221,17 +221,4 @@ model{
 
 }
 
-generated quantities{
-  
-  vector[N] log_lik;
-  
-  for(n in 1:N){
 
-    if(pp[n] == 0){
-      log_lik[n]= normal_lpdf(rt[n]|rt_mu[n],sigma[jj[n]]);
-    }
-    if(pp[n] == 1){
-      log_lik[n] =log_sum_exp(normal_lpdf(rt[n]|rt2_mu[n],sigma[jj[n]]), normal_lpdf(rt[n]|rt1_mu[n],sigma[jj[n]]) );
-    }
-  }
-}

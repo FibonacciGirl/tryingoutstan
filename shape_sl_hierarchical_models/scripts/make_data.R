@@ -177,40 +177,55 @@ r.prior<-function(type, priors){
 }
 
 
-generate.parameter.values<-function(priors){
+generate.parameter.values<-function(priors, model = c('power.constant',
+                                                      'power.logistic',
+                                                      'power.power',
+                                                      'piecewise.power.constant')){
   
   
-  recovery.parameter.values<- list(
-    power.constant = list(intercept = r.prior('intercept',priors),
+  recovery.parameter.values<- list()
+  i=0
+  
+  for(m in model){
+    i=i+1
+    if(m == 'power.constant'){
+      recovery.parameter.values[[i]] = list(intercept = r.prior('intercept',priors),
                           base= r.prior('base',priors), 
                           rate= - r.prior('rate',priors),
                           proportion = r.prior('proportion',priors),
-                          sigma = r.prior('sigma',priors)),
-   
-    piecewise.power.constant = list(intercept = r.prior('intercept',priors),
+                          sigma = r.prior('sigma',priors))
+    }
+    if(m == 'piecewise.power.constant'){
+      recovery.parameter.values[[i]] =  list(intercept = r.prior('intercept',priors),
                                     base= r.prior('base',priors), 
                                     rate= -r.prior('rate',priors),
                                     proportion = r.prior('proportion',priors),
                                     jump = r.prior('jump',priors),
                                     split = r.prior('split',priors),
-                                    sigma=r.prior('sigma',priors)),
-    
-    power.power = list(intercept = r.prior('intercept',priors),
+                                    sigma=r.prior('sigma',priors))
+    }
+    if(m == 'power.power'){
+      recovery.parameter.values[[i]] = list(intercept = r.prior('intercept',priors),
                        base= r.prior('base',priors), 
                        rate= -r.prior('rate',priors),
                        proportion = r.prior('proportion',priors), 
                        base.1= r.prior('base.1',priors), 
                        rate.1= -r.prior('rate.1',priors),
-                       sigma = r.prior('sigma',priors)),
-    
-    power.logistic = list(intercept = r.prior('intercept',priors), 
+                       sigma = r.prior('sigma',priors))
+    }
+    if(m == 'power.logistic'){
+      recovery.parameter.values[[i]] =  list(intercept = r.prior('intercept',priors), 
                           base= r.prior('base',priors), 
                           rate= - r.prior('rate',priors),
                           proportion = r.prior('proportion',priors), 
                           jump = r.prior('jump',priors), 
                           rate.1= -r.prior('rate.1',priors),
                           split = r.prior('split',priors),
-                          sigma=r.prior('sigma',priors)) )
+                          sigma=r.prior('sigma',priors))
+
+    }
+  }
+  names(recovery.parameter.values) = model
   return(recovery.parameter.values)
 }
 
@@ -338,16 +353,31 @@ fake.subject.data <- function(prior, model, t, n.subjects){
   
   for(i in 1:n.subjects){
     
-    params[[i]]<-generate.parameter.values(fake.prior)
+    params[[i]]<-generate.parameter.values(fake.prior, model= model)
+
     fake.subject <- cbind(subject = rep(i, length(t)),create.recovery.data(params[[i]], t, models = model))
     fake.data <- rbind(fake.data, fake.subject)
   }
   return(list(fake.data = fake.data,params = params))
 }
 
-library(tidyr)
-
-
+generate.fake.data<-function(prior.mean, model,t,n.subjects){
+  fake.data.l<-fake.subject.data(prior.m,model,t,n.subjects)
+  fake.data.c<-fake.subject.data(prior.m,c('power.constant'),t,n.subjects)
+  
+  params.l<-fake.data.l$params
+  params.c<-fake.data.c$params
+  
+  params<-c(params.l,params.c)
+  
+  fake.subject.l<-subset(fake.data.l$fake.data,model ==model)
+  fake.subject.c<-subset(fake.data.c$fake.data,model =='power.constant')
+  fake.subject.c$subject<-fake.subject.c$subject+20
+  
+  fake.data<-rbind(fake.subject.l,fake.subject.c)
+  
+  return(list(fake.data=fake.data,params=params))
+}
 
 get.stan<-function(fake.data, prior.mean, prior.var,model,nchains){
   
@@ -356,89 +386,89 @@ get.stan<-function(fake.data, prior.mean, prior.var,model,nchains){
   fake.data<-rbind(fake.pred,fake.unpred)
   
   
-  Tr = max(fake.data$t)
-  J  = length(unique(fake.data$j))
-  P  = length(unique(fake.data$p))
-  N  = length(fake.data$rt)
-  rt = fake.data$rt
-  jj = fake.data$j
-  tt = fake.data$t
-  pp = fake.data$p
-  
-  
-  
-  sigma.mean= prior.params(prior.mean$sigma)
-  rtu_intercept_mean= prior.params(prior.mean$intercept)
-  rtu_base_mean= prior.params(prior.mean$base)
-  rtu_rate_mean= prior.params(prior.mean$rate)
-  rlr_constnat_intercept_mean= prior.params(prior.mean$proportion)
-  rlr_logistic_intercept_mean= prior.params(prior.mean$proportion)
-  rlr_logistic_jump_mean= prior.params(prior.mean$jump)
-  rlr_logistic_rate_mean= prior.params(prior.mean$rate)
-  rlr_logistic_split_mean= prior.params(prior.mean$split)
-  
 
-  
-  alpha= sigma.mean[1]
-  beta= sigma.mean[2]
-  
-  mu0 = rtu_intercept_mean[1]
-  tau0= rtu_intercept_mean[2]
-  mu1 = rtu_base_mean[1]
-  tau1= rtu_base_mean[2]
-  mu2 = rtu_rate_mean[1]
-  tau2= rtu_rate_mean[2]
-  mu3 = rlr_constnat_intercept_mean[1]
-  tau3=rlr_constnat_intercept_mean[2]
-  mu4 = rlr_logistic_intercept_mean[1]
-  tau4= rlr_logistic_intercept_mean[2]
-  mu5 = rlr_logistic_jump_mean[1]
-  tau5=rlr_logistic_jump_mean[2]
-  mu6 = rlr_logistic_rate_mean[1]
-  tau6= rlr_logistic_rate_mean[2]
-  mu7 = rlr_logistic_split_mean[1]
-  tau7= rlr_logistic_split_mean[2]
-  
-  
-  sigma.var= prior.params(prior.var$sigma)
-  rtu_intercept_var= prior.params(prior.var$intercept)
-  rtu_base_var= prior.params(prior.var$base)
-  rtu_rate_var= prior.params(prior.var$rate)
-  rlr_constnat_intercept_var= prior.params(prior.var$proportion)
-  rlr_logistic_intercept_var= prior.params(prior.var$proportion)
-  rlr_logistic_jump_var= prior.params(prior.var$jump)
-  rlr_logistic_rate_var= prior.params(prior.var$rate)
-  rlr_logistic_split_var= prior.params(prior.var$split)
-  
-  
-  a= sigma.var[1]
-  b= sigma.var[2]
-  
-  alpha0 = rtu_intercept_var[1]
-  beta0= rtu_intercept_var[2]
-  alpha1 = rtu_base_var[1]
-  beta1= rtu_base_var[2]
-  alpha2 = rtu_rate_var[1]
-  beta2= rtu_rate_var[2]
-  alpha3 = rlr_constnat_intercept_var[1]
-  beta3=rlr_constnat_intercept_var[2]
-  alpha4 = rlr_logistic_intercept_var[1]
-  beta4= rlr_logistic_intercept_var[2]
-  alpha5 = rlr_logistic_jump_var[1]
-  beta5=rlr_logistic_jump_var[2]
-  alpha6 = rlr_logistic_rate_var[1]
-  beta6= rlr_logistic_rate_var[2]
-  alpha7 = rlr_logistic_split_var[1]
-  beta7= rlr_logistic_split_var[2]
-  
-  p1=.5
-  p2=.5
-  p_prior=c(p1,p2)
   
   
   nchains = 1
 
   if(model == 'power.logistic'){
+    Tr = max(fake.data$t)
+    J  = length(unique(fake.data$j))
+    P  = length(unique(fake.data$p))
+    N  = length(fake.data$rt)
+    rt = fake.data$rt
+    jj = fake.data$j
+    tt = fake.data$t
+    pp = fake.data$p
+    
+    
+    
+    sigma_mean= prior.params(prior.mean$sigma)
+    rtu_intercept_mean= prior.params(prior.mean$intercept)
+    rtu_base_mean= prior.params(prior.mean$base)
+    rtu_rate_mean= prior.params(prior.mean$rate)
+    rlr_constnat_intercept_mean= prior.params(prior.mean$proportion)
+    rlr_logistic_intercept_mean= prior.params(prior.mean$proportion)
+    rlr_logistic_jump_mean= prior.params(prior.mean$jump)
+    rlr_logistic_rate_mean= prior.params(prior.mean$rate)
+    rlr_logistic_split_mean= prior.params(prior.mean$split)
+
+
+    alpha= sigma_mean[1]
+    beta= sigma_mean[2]
+    
+    mu0 = rtu_intercept_mean[1]
+    tau0= rtu_intercept_mean[2]
+    mu1 = rtu_base_mean[1]
+    tau1= rtu_base_mean[2]
+    mu2 = rtu_rate_mean[1]
+    tau2= rtu_rate_mean[2]
+    mu3 = rlr_constnat_intercept_mean[1]
+    tau3=rlr_constnat_intercept_mean[2]
+    mu4 = rlr_logistic_intercept_mean[1]
+    tau4= rlr_logistic_intercept_mean[2]
+    mu5 = rlr_logistic_jump_mean[1]
+    tau5=rlr_logistic_jump_mean[2]
+    mu6 = rlr_logistic_rate_mean[1]
+    tau6= rlr_logistic_rate_mean[2]
+    mu7 = rlr_logistic_split_mean[1]
+    tau7= rlr_logistic_split_mean[2]
+    
+    
+    sigma_var= prior.params(prior.var$sigma)
+    rtu_intercept_var= prior.params(prior.var$intercept)
+    rtu_base_var= prior.params(prior.var$base)
+    rtu_rate_var= prior.params(prior.var$rate)
+    rlr_constnat_intercept_var= prior.params(prior.var$proportion)
+    rlr_logistic_intercept_var= prior.params(prior.var$proportion)
+    rlr_logistic_jump_var= prior.params(prior.var$jump)
+    rlr_logistic_rate_var= prior.params(prior.var$rate)
+    rlr_logistic_split_var= prior.params(prior.var$split)
+    
+    
+    a= sigma_var[1]
+    b= sigma_var[2]
+    
+    alpha0 = rtu_intercept_var[1]
+    beta0= rtu_intercept_var[2]
+    alpha1 = rtu_base_var[1]
+    beta1= rtu_base_var[2]
+    alpha2 = rtu_rate_var[1]
+    beta2= rtu_rate_var[2]
+    alpha3 = rlr_constnat_intercept_var[1]
+    beta3=rlr_constnat_intercept_var[2]
+    alpha4 = rlr_logistic_intercept_var[1]
+    beta4= rlr_logistic_intercept_var[2]
+    alpha5 = rlr_logistic_jump_var[1]
+    beta5=rlr_logistic_jump_var[2]
+    alpha6 = rlr_logistic_rate_var[1]
+    beta6= rlr_logistic_rate_var[2]
+    alpha7 = rlr_logistic_split_var[1]
+    beta7= rlr_logistic_split_var[2]
+    
+    p1=.5
+    p2=.5
+    p_prior=c(p1,p2)
     model.data<- list(rep(list(
       Tr = Tr,
       J=J,
@@ -492,6 +522,83 @@ get.stan<-function(fake.data, prior.mean, prior.var,model,nchains){
     f = 'rt_comparison_constantRLR-logisticRLR-Vectorize.stan'
   }
   if(model == 'power.power'){
+    Tr = max(fake.data$t)
+    J  = length(unique(fake.data$j))
+    P  = length(unique(fake.data$p))
+    N  = length(fake.data$rt)
+    rt = fake.data$rt
+    jj = fake.data$j
+    tt = fake.data$t
+    pp = fake.data$p
+    
+    
+    
+    sigma_mean= prior.params(prior.mean$sigma)
+    rtu_intercept_mean= prior.params(prior.mean$intercept)
+    rtu_base_mean= prior.params(prior.mean$base)
+    rtu_rate_mean= prior.params(prior.mean$rate)
+    rlr_constnat_intercept_mean= prior.params(prior.mean$proportion)
+    rlr_power_intercept_mean= prior.params(prior.mean$proportion)
+    rlr_power_base_mean= prior.params(prior.mean$base)
+    rlr_power_rate_mean= prior.params(prior.mean$rate)
+
+    
+    
+    
+    alpha= sigma_mean[1]
+    beta= sigma_mean[2]
+    
+    mu0 = rtu_intercept_mean[1]
+    tau0= rtu_intercept_mean[2]
+    mu1 = rtu_base_mean[1]
+    tau1= rtu_base_mean[2]
+    mu2 = rtu_rate_mean[1]
+    tau2= rtu_rate_mean[2]
+    mu3 = rlr_constnat_intercept_mean[1]
+    tau3=rlr_constnat_intercept_mean[2]
+    mu4 = rlr_power_intercept_mean[1]
+    tau4= rlr_power_intercept_mean[2]
+    mu5 = rlr_power_base_mean[1]
+    tau5=rlr_power_base_mean[2]
+    mu6 = rlr_power_rate_mean[1]
+    tau6= rlr_power_rate_mean[2]
+
+    
+    
+    sigma_var= prior.params(prior.var$sigma)
+    rtu_intercept_var= prior.params(prior.var$intercept)
+    rtu_base_var= prior.params(prior.var$base)
+    rtu_rate_var= prior.params(prior.var$rate)
+    rlr_constnat_intercept_var= prior.params(prior.var$proportion)
+    rlr_power_intercept_var= prior.params(prior.var$proportion)
+    rlr_power_base_var= prior.params(prior.var$base)
+    rlr_power_rate_var= prior.params(prior.var$rate)
+
+    
+    
+    a= sigma_var[1]
+    b= sigma_var[2]
+    
+    alpha0 = rtu_intercept_var[1]
+    beta0= rtu_intercept_var[2]
+    alpha1 = rtu_base_var[1]
+    beta1= rtu_base_var[2]
+    alpha2 = rtu_rate_var[1]
+    beta2= rtu_rate_var[2]
+    alpha3 = rlr_constnat_intercept_var[1]
+    beta3=rlr_constnat_intercept_var[2]
+    alpha4 = rlr_power_intercept_var[1]
+    beta4= rlr_power_intercept_var[2]
+    alpha5 = rlr_power_base_var[1]
+    beta5=rlr_power_base_var[2]
+    alpha6 = rlr_power_rate_var[1]
+    beta6= rlr_power_rate_var[2]
+
+    
+    p1=.5
+    p2=.5
+    p_prior=c(p1,p2)
+    
     model.data<-list(rep(list( 
       Tr = Tr,
       J=J,
@@ -539,7 +646,7 @@ get.stan<-function(fake.data, prior.mean, prior.var,model,nchains){
       beta6=beta6
   
     ), nchains))
-    f = 'rt_comparison_constantRLR_powerRLR-Vectorize-sparse-student-t.stan'
+    f = 'rt_comparison_constantRLR-powerRLR.stan'
   }
 
   

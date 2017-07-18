@@ -72,7 +72,7 @@ parameters{
 
   
 //INDIVIDUAL LEVEL PARAMETERS
-  vector <lower = 0>[J] sigma;
+  vector <lower = 0, upper =300>[J] sigma;
   
   //rtu
   vector <lower = 0>[J] rtu_intercept;
@@ -89,7 +89,7 @@ parameters{
   vector <lower = 0 , upper = Tr>[J] rlr_logistic_split;
   
 //GROUP LEVEL PARAMETERS
-  real <lower = 0> sigma_mean;
+  real <lower = 0, upper = 300> sigma_mean;
   real <lower = 0> sigma_var;
   
   //rtu
@@ -146,20 +146,18 @@ transformed parameters{
 
   for(n in 1:N){
     rt_mu[n]= rtu_intercept[jj[n]]*( 1+ rtu_base[jj[n]]*((tt[n])^(-rtu_rate[jj[n]])-1));   
-    if(pp[n]==1){
+
       rt1_mu[n] = rt_mu[n]*rlr_constant_intercept[jj[n]];
       rt2_mu[n] = rt_mu[n]*(rlr_logistic_intercept[jj[n]]+(rlr_logistic_intercept2[jj[n]]-rlr_logistic_intercept[jj[n]])/(1+exp(rlr_logistic_rate[jj[n]]*(tt[n] - rlr_logistic_split[jj[n]]))));
-
+    
+    if(pp[n]==1){
       log_q_z1[jj[n]] = log_q_z1[jj[n]] + normal_lpdf(rt[n]|rt1_mu[n],sigma[jj[n]]);
 
               
       log_q_z2[jj[n]] = log_q_z2[jj[n]] + normal_lpdf(rt[n]|rt2_mu[n],sigma[jj[n]]);
 
     }
-    else{
-      rt1_mu[n] = 0;
-      rt2_mu[n] = 0;
-    }
+
   }
 }
 model{

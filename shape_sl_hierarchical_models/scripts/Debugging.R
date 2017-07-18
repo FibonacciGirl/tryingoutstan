@@ -1,6 +1,7 @@
 source('scripts/visualize_models.R')
 source('scripts/visualize_priors multi.R')
 source('scripts/make_data.R')
+source('scripts/fit_conversion.R')
 library(gridExtra)
 
 library(rstan)
@@ -11,6 +12,7 @@ options(mc.cores = parallel::detectCores())
 
 # enter values for prior distributions on types of parameters 
 
+#means
 prior.m<-list('intercept' = list(fn = 'gamma', par1 =900, par2 =100 ), 
             'base' = list(fn = 'unif', par1 =0, par2=1),
             'rate' = list(fn = 'gamma', par1= .3,par2 =.3),
@@ -19,6 +21,7 @@ prior.m<-list('intercept' = list(fn = 'gamma', par1 =900, par2 =100 ),
             'split' = list(fn = 'unif', par1=0, par2=72),
             'sigma' = list(fn = 'gamma', par1=25, par2=10))
 
+#variances
 prior.v<-list('intercept' = list(fn = 'gamma', par1 =100, par2 =10 ), 
             'base' = list(fn = 'beta', par1 =.2, par2=7),
             'rate' = list(fn = 'beta', par1= .2,par2 =7),
@@ -29,13 +32,14 @@ prior.v<-list('intercept' = list(fn = 'gamma', par1 =100, par2 =10 ),
 
 
 
-
-##plot prior distributions 
 write_json(prior.m, 'prior.m.json')
 write_json(prior.v, 'prior.v.json')
-p<-visualize.priors.multi( list('prior.v.json'))
-p<-visualize.priors.multi( list('prior.m.json'))
-plot(arrangeGrob(grobs =p))
+
+##plot prior distributions 
+prior.plots('prior.m.json')
+prior.plots('prior.v.json')
+
+
 
 
 
@@ -44,34 +48,55 @@ model = c('power.logistic') #specify model
 t = 1:72 
 n.subjects = 20
 
+fake.data<-generate.fake.data(prior.m,model,t,n.subjects)
 
-fake.data.l<-fake.subject.data(prior.m,model,t,n.subjects)
-fake.data.c<-fake.subject.data(prior.m,c('power.constant'),t,n.subjects)
-
+params<-fake.data$params
+subject.data<-fake.data$fake.data
 
 
 #view fake data plots
-params.l<-fake.data.l$params
-params.c<-fake.data.c$params
+which.subject= 40
 
+graph.fake.data(subject.data,params,which.subject)
 
-fake.subject.l<-subset(fake.data.l$fake.data,model ==model)
-fake.subject.c<-subset(fake.data.c$fake.data,model =='power.constant')
-fake.subject.c$subject<-fake.subject.c$subject+20
-
-fake.subject.c
-
-which.subject= 3
-
-pl<-plot.data.fits(subject.data=subset(fake.subject.l,subject == which.subject), fit = params.l[[which.subject]], model = model )
-pc<-plot.data.fits(subject.data=subset(fake.subject.c,subject == which.subject), fit = params.c[[which.subject]], model = c('power.constant') )
-pl
-##convert fake data to model data format
+##run stan on fake data
 nchains = 2
 
+fake.model.fit<-get.stan(fake.data= subject.data, prior.mean = prior.m, prior.var = prior.v, model=model, nchains)
 
-fake.model.fit<-get.stan(fake.data= rbind(fake.subject.l,fake.subject.c),prior.mean=prior.m,prior.var=prior.v,model=model, nchains)
+
+plot(fake.model.fit,par=c('rtu_intercept[2]'))
+## extract fit
+
+graph.fit.data(fake.model.fit,subject.data,which.subject,model)
+
+fit.summary<-summary( fake.model.fit , pars = c(paste0('sigma[',which.subject,']'),
+                                     paste0('rtu_intercept[',which.subject,']'),
+                                     paste0('rtu_base[',which.subject,']'),
+                                     paste0('rtu_rate[',which.subject,']'),
+                                     paste0('rlr_constant_intercept[',which.subject,']'),
+                                     paste0('rlr_logistic_intercept[',which.subject,']'),
+                                     paste0('rlr_logistic_intercept2[',which.subject,']'),
+                                     paste0('rlr_logistic_rate[',which.subject,']'),
+                                     paste0('rlr_logistic_split[',which.subject,']')))
+
+fit.summary
+
+fit.mcmc<-As.mcmc.list(fake.model.fit, pars = c('sigma'))
+
+plot(fit.mcmc)
+
+J=2*n.subjects
+pi<-matrix(nrow=J,ncol=2)
+
+for(j in 1:J){
+  fit<-as.matrix(fake.model.fit, par = c(paste0('pi0[',j,',1]') , paste0('pi0[',j,',2]')))
+  
+  
+  pi[j,1]<-mean(fit[,1])
+  pi[j,2]<-mean(fit[,2])
+}
+pi[27,]
 
 
-plot(fake.model.fit, par = c('pi0[4,1]','pi0[4,2]'))
-
+pi

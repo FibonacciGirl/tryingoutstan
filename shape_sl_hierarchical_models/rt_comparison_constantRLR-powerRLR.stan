@@ -14,7 +14,7 @@ data{
 
   
   //prior parameters 
-  simplex[2] p;                 //model selection prior
+  simplex[2] p_prior;                 //model selection prior
   
   
   real <lower = 0> alpha;       //sigma prior
@@ -57,14 +57,19 @@ data{
   real <lower = 0> alpha6;
   real <lower = 0> beta6;
   
+  
 }
 parameters{
+
+
   //model selection parameter
-  simplex[2] pi0;
+  simplex[2] p;
+  simplex[2] pi0[J];
+
   
   //individual level
 
-  vector <lower = 0>[J] sigma;
+  vector <lower = 0,upper = 300>[J] sigma;
   
   //rtu
   vector <lower = 0>[J] rtu_intercept;
@@ -80,7 +85,7 @@ parameters{
   vector <lower = 0>[J] rlr_power_rate;
   
   //group level
-  real <lower = 0> sigma_mean;
+  real <lower = 0, upper = 300> sigma_mean;
   real <lower = 0> sigma_var;
   
   //rtu
@@ -94,11 +99,11 @@ parameters{
   real <lower = 0> rtu_rate_var;
   
   //rlr cosntant
-  real <lower = 0, upper = 2000>  rlr_constant_intercept_mean;
+  real <lower = 0, upper = 5>  rlr_constant_intercept_mean;
   real <lower = 0>  rlr_constant_intercept_var;
   
   //rlr power
-  real <lower = 0,upper=2000> rlr_power_intercept_mean;
+  real <lower = 0,upper=5> rlr_power_intercept_mean;
   real <lower = 0> rlr_power_intercept_var;
   
   real <lower = 0, upper = 1> rlr_power_base_mean;
@@ -121,8 +126,13 @@ transformed parameters{
   
   
     for(j in 1:J){
-      log_q_z1[j] = log(pi0[1]);
-      log_q_z2[j] = log(pi0[2]);
+      log_q_z1[j] = log(pi0[j,1])
+                    + normal_lpdf(rlr_constant_intercept[j]| rlr_constant_intercept_mean, rlr_constant_intercept_var);
+      log_q_z2[j] = log(pi0[j,2])
+                    + normal_lpdf(rlr_power_intercept[j]|rlr_power_intercept_mean,rlr_power_intercept_var)
+                    + normal_lpdf(rlr_power_base[j]|rlr_power_base_mean,rlr_power_base_var)
+                    + normal_lpdf(rlr_power_rate[j]| rlr_power_rate_mean,rlr_power_rate_var);
+  
     }
 
   
@@ -131,32 +141,27 @@ transformed parameters{
           
           
           rt_mu[n]= rtu_intercept[jj[n]]*( 1+ rtu_base[jj[n]]*((tt[n])^(-rtu_rate[jj[n]])-1));   
+
+
+          rt1_mu[n] = rt_mu[n]*rlr_constant_intercept[jj[n]];
+          rt2_mu[n] = rt_mu[n]*(rlr_power_intercept[jj[n]]*( 1+ rlr_power_base[jj[n]]*((tt[n])^(- rlr_power_rate[jj[n]])-1)));
+              
             if(pp[n]==1){
 
-              rt1_mu[n] = rt_mu[n]*rlr_constant_intercept[jj[n]];
-              rt2_mu[n] = rt_mu[n]*rlr_power_intercept[jj[n]]*( 1+ rlr_power_base[jj[n]]*((tt[n])^(-rlr_power_rate[jj[n]])-1));
-              
-              //log_q_z1[n] = log(pi0[1]) + normal_lpdf(rt[n]|rt1_mu[n],sigma[jj[n]]);
-              //log_q_z2[n] = log(pi0[2]) + normal_lpdf(rt[n]|rt2_mu[n],sigma[jj[n]]);
-
               log_q_z1[jj[n]] = log_q_z1[jj[n]] + normal_lpdf(rt[n]|rt1_mu[n],sigma[jj[n]]);
+
+              
               log_q_z2[jj[n]] = log_q_z2[jj[n]] + normal_lpdf(rt[n]|rt2_mu[n],sigma[jj[n]]);
-            }
-            else{
-              rt1_mu[n] = 0;
-              rt2_mu[n] = 0;
-              //log_q_z1[n] = 0;
-              //log_q_z2[n] = 0;
 
             }
-      
+ 
   }
   
 }
 model{
   
   //model selection prior
-  target += dirichlet_lpdf(pi0|p);
+  target += dirichlet_lpdf(p|p_prior);
   
   //group priors
   
@@ -165,7 +170,7 @@ model{
   
   //rtu
   target+= gamma_lpdf(rtu_intercept_mean|mu0,tau0);
-  target+= gamma_lpdf(rtu_base_mean|mu1,tau1);
+  target+= uniform_lpdf(rtu_base_mean|mu1,tau1);
   target+= gamma_lpdf(rtu_rate_mean|mu2,tau2);
   
   
@@ -175,25 +180,18 @@ model{
   
   
   //indidvidual priors
-  target+= gamma_lpdf(sigma|sigma_mean,sigma_var);
+  target+= normal_lpdf(sigma|sigma_mean,sigma_var);
   
   //rtu
-  target+= normal_lpdf(rtu_intercept|rtu_intercept_mean,rtu_intercept_var);
-  target+= normal_lpdf(rtu_base|rtu_base_mean,rtu_base_var);
-  target+= normal_lpdf(rtu_rate| rtu_rate_mean,rtu_rate_var);
+
   
   
-  target += normal_lpdf(rlr_constant_intercept| rlr_constant_intercept_mean, rlr_constant_intercept_var);
-  
-  target += normal_lpdf(rlr_power_intercept|rlr_power_intercept_mean,rlr_power_intercept_var);
-  target += normal_lpdf(rlr_power_base|rlr_power_base_mean,rlr_power_base_var);
-  target += normal_lpdf(rlr_power_rate| rlr_power_rate_mean,rlr_power_rate_var);
-  
+
   target += gamma_lpdf(rlr_power_intercept_mean|mu4,tau4);
-  target += gamma_lpdf(rlr_power_base_mean|mu5,tau5);
+  target += uniform_lpdf(rlr_power_base_mean|mu5,tau5);
   target += gamma_lpdf(rlr_power_rate_mean|mu6,tau6);
   target += gamma_lpdf(rlr_power_intercept_var|alpha4, beta4);
-  target += gamma_lpdf(rlr_power_base_var|alpha5,beta5);
+  target += uniform_lpdf(rlr_power_base_var|alpha5,beta5);
   target += gamma_lpdf(rlr_power_rate_var|alpha6,beta6);
   
   
@@ -206,27 +204,19 @@ model{
     if(pp[n]==0){
       target += normal_lpdf(rt[n]|rt_mu[n],sigma[jj[n]]);
     }
-    else{
-      //target += log_sum_exp(log_q_z1[n],log_q_z2[n]);
-    }
   }
   for(j in 1:J){
+      target += dirichlet_lpdf(pi0[j]|p);
+      
+      target+= normal_lpdf(rtu_intercept[j]| rtu_intercept_mean,rtu_intercept_var);
+      target+= normal_lpdf(rtu_base[j]| rtu_base_mean,rtu_base_var);
+      target+= normal_lpdf(rtu_rate[j]| rtu_rate_mean,rtu_rate_var);
+    
       target += log_sum_exp(log_q_z1[j],log_q_z2[j]);
+      
 
     }
 
 }
-generated quantities{
-  
-  vector[N] log_lik;
-  
-  for(n in 1:N){
 
-    if(pp[n] == 0){
-      log_lik[n]= normal_lpdf(rt[n]|rt_mu[n],sigma[jj[n]]);
-    }
-    if(pp[n] == 1){
-      log_lik[n] =log_sum_exp(normal_lpdf(rt[n]|rt2_mu[n],sigma[jj[n]]), normal_lpdf(rt[n]|rt1_mu[n],sigma[jj[n]]) );
-    }
-  }
-}
+

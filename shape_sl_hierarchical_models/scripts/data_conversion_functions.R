@@ -28,7 +28,6 @@ exclude.subjects<-function(model.data){
 }
 
 
-
 convert.recovery.data<-function(json){
   subject.data<-read_json(json)
   

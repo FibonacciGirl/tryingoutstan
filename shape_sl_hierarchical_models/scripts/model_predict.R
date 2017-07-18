@@ -11,7 +11,7 @@ rl.constant.model.predict<-function(t,d){
 }
 
 rl.logistic.model.predict<-function(t,d,e,f,g){
-  rl<-d+((d*e-d)/(1+exp(f*(t-g))))
+  rl<-d+((e-d)/(1+exp(f*(t-g))))
   return(c(rl=rl))
 }
 
