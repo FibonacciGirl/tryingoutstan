@@ -388,8 +388,6 @@ get.stan<-function(fake.data, prior.mean, prior.var,model,nchains){
   
 
   
-  
-  nchains = 1
 
   if(model == 'power.logistic'){
     Tr = max(fake.data$t)

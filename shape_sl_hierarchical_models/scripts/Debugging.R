@@ -44,7 +44,7 @@ prior.plots('prior.v.json')
 
 
 ##draw fake data from the priors
-model = c('power.logistic') #specify model
+model = c('power.power') #specify model
 t = 1:72 
 n.subjects = 20
 
@@ -55,37 +55,41 @@ subject.data<-fake.data$fake.data
 
 
 #view fake data plots
-which.subject= 40
+which.subject= 10
 
 graph.fake.data(subject.data,params,which.subject)
 
 ##run stan on fake data
-nchains = 2
+nchains = 20
 
 fake.model.fit<-get.stan(fake.data= subject.data, prior.mean = prior.m, prior.var = prior.v, model=model, nchains)
 
 
 plot(fake.model.fit,par=c('rtu_intercept[2]'))
-## extract fit
+
+## graph fit for subject
 
 graph.fit.data(fake.model.fit,subject.data,which.subject,model)
 
+##summary of subject fit
 fit.summary<-summary( fake.model.fit , pars = c(paste0('sigma[',which.subject,']'),
                                      paste0('rtu_intercept[',which.subject,']'),
                                      paste0('rtu_base[',which.subject,']'),
                                      paste0('rtu_rate[',which.subject,']'),
                                      paste0('rlr_constant_intercept[',which.subject,']'),
-                                     paste0('rlr_logistic_intercept[',which.subject,']'),
-                                     paste0('rlr_logistic_intercept2[',which.subject,']'),
-                                     paste0('rlr_logistic_rate[',which.subject,']'),
-                                     paste0('rlr_logistic_split[',which.subject,']')))
+                                     paste0('rlr_power_intercept[',which.subject,']'),
+                                     paste0('rlr_power_base[',which.subject,']'),
+                                     paste0('rlr_power_rate[',which.subject,']')))
 
-fit.summary
+
+##mcmc stuff
 
 fit.mcmc<-As.mcmc.list(fake.model.fit, pars = c('sigma'))
 
 plot(fit.mcmc)
 
+
+##mean pi for all subjects
 J=2*n.subjects
 pi<-matrix(nrow=J,ncol=2)
 
