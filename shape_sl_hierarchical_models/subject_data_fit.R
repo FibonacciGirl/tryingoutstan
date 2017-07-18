@@ -46,15 +46,15 @@ tau0= 0.09
 mu1 = 1
 tau1=1
 mu2 = 6
-tau2= NA
+tau2= 6
 mu3 = 26.96
 tau3=25.98
 mu4 = 26.96
 tau4= 25.98
 mu5 = 6
-tau5=NA
-mu6 = 3
-tau6= NA
+tau5=6
+mu6 = 1
+tau6= 1
 mu7 = 0
 tau7= Tr
 
@@ -106,15 +106,15 @@ model.data.1<- list(rep(list(
   mu1 = mu1,
   tau1 = tau1,
   mu2 = mu2,
-  #tau2 = tau2,
+  tau2 = tau2,
   mu3 = mu3,
   tau3 = tau3,
   mu4 = mu4,
   tau4 = tau4,
   mu5 = mu5,
-  #tau5 = tau5,
+  tau5 = tau5,
   mu6 = mu6,
-  #tau6 = tau6,
+  tau6 = tau6,
   mu7 = mu7,
   tau7 = tau7,
 
@@ -139,14 +139,13 @@ model.data.1<- list(rep(list(
 ), nchains))
 
 library(rstan)
-model.data
-
+model.data.1[[1]]$tau2
 
 
 rstan_options(auto_write = TRUE)
 options(mc.cores = parallel::detectCores())
 
-subject.fit.test <- stan(file = 'rt_comparison_constantRLR_logisticRLR-Vectorize-sparse-student-t.stan', data = model.data.1, iter = 10000,warmup =1000 , 
+subject.fit.test <- stan(file = 'rt_comparison_constantRLR-logisticRLR-Vectorize.stan', data = model.data.1, iter = 10000,warmup =1000 , 
                   chains = nchains, verbose = T)
 
 

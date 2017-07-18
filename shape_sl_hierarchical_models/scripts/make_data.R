@@ -349,7 +349,7 @@ library(tidyr)
 
 
 
-get.plot.data<-function(fake.data, prior.mean, prior.var,model,nchains){
+get.stan<-function(fake.data, prior.mean, prior.var,model,nchains){
   
   fake.pred<-data.frame(j= fake.data$subject,t= fake.data$t, rt= fake.data$predictable, p = rep(1,length(fake.data$t)))
   fake.unpred<-data.frame(j = fake.data$subject, t= fake.data$t, rt = fake.data$unpredictable, p = rep(0,length(fake.data$t)))
@@ -489,9 +489,10 @@ get.plot.data<-function(fake.data, prior.mean, prior.var,model,nchains){
       beta7=beta7
   
     ), nchains))
+    f = 'rt_comparison_constantRLR-logisticRLR-Vectorize.stan'
   }
   if(model == 'power.power'){
-    model.data<-list(rep(list(
+    model.data<-list(rep(list( 
       Tr = Tr,
       J=J,
       P=P,
@@ -538,10 +539,14 @@ get.plot.data<-function(fake.data, prior.mean, prior.var,model,nchains){
       beta6=beta6
   
     ), nchains))
+    f = 'rt_comparison_constantRLR_powerRLR-Vectorize-sparse-student-t.stan'
   }
-  
 
-  return(model.data)
+  
+  test <- stan(file = f, data = model.data, iter = 10000,warmup =1000 , 
+               chains = nchains, verbose = T)
+
+  return(test)
 
 }
 

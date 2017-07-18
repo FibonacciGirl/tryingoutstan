@@ -3,7 +3,7 @@ library(ggplot2)
 library(gridExtra)
 
 source('scripts/DBDA2E-utilities.R')
-source('scripts/priors.R')
+
 
 # A function to put the prior in the form prior = c(fn, params, title) where fn is the type of distribution, params is a vector containing the parameters of that distribution, 
 # and title indicates the type of parameter the prior is for (e.g., intercept, slope).
@@ -75,19 +75,19 @@ extract.prior<-function(priors){
 from.to<-function(list,n.params){
   n.priors<-length(list)
 
+
+  
   from<-array(dim=c(n.priors,n.params))
   to<-array(dim=c(n.priors,n.params))
   out<-data.frame(from=numeric(length=n.params),to=numeric(length=n.params))
   
   if(n.priors != 1){
-    
-    for(j in 1:n.params){
-      for(i in 1:n.priors){
-        
-        
-        prior<-read_json(list[[i]])
-        
-        prior<-extract.prior(prior)
+  
+    for(i in 1:n.priors){
+      prior<-read_json(list[[i]])
+      prior<-extract.prior(prior)
+      
+        for(j in 1:n.params){
         pr<-prior[[j]]
         
         fn<-pr[1]
@@ -244,11 +244,15 @@ graph.prior.multi<-function(plot.data){
 visualize.priors.multi<-function(list){
   n.priors<-length(list)
   prior<-list()
+
   
   if(n.priors != 1){
     
     for(i in 1:n.priors){
+
       pr<-read_json(list[[i]])
+
+      
       prior[[i]]<-extract.prior(pr)
     }
     
@@ -263,10 +267,12 @@ visualize.priors.multi<-function(list){
     
     for(i in 1:n.params){
       plot.data<-numeric()
+      
+      
       for(j in 1:n.priors){
         
         pr<-prior[[j]][[i]]
-        plot[[i]]<- plot.prior(pr,from[i],to[i])
+        plot[[i]]<- plot.prior(pr,min(from[i]),max(to[i]))
         
         plot.data<-rbind(plot.data,plot[[i]])
       }
@@ -279,6 +285,8 @@ visualize.priors.multi<-function(list){
     prior<-extract.prior(pr)
     n.params<-length(prior)
     
+
+    
     from<-from.to(list,n.params)$from
     to<-from.to(list,n.params)$to
     
@@ -286,6 +294,7 @@ visualize.priors.multi<-function(list){
     plot<-list()
     
     for(i in 1:n.params){
+      
       plot[[i]]<-plot.prior(prior[[i]], from[i],to[i])
       
       p[[i]]<-graph.prior.multi(plot[[i]])

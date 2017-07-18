@@ -11,7 +11,7 @@ options(mc.cores = parallel::detectCores())
 
 # enter values for prior distributions on types of parameters 
 
-prior<-list('intercept' = list(fn = 'gamma', par1 =900, par2 =100 ), 
+prior.m<-list('intercept' = list(fn = 'gamma', par1 =900, par2 =100 ), 
             'base' = list(fn = 'unif', par1 =0, par2=1),
             'rate' = list(fn = 'gamma', par1= .3,par2 =.3),
             'proportion' = list(fn =  'gamma', par1 =1, par2 = .1),
@@ -19,10 +19,22 @@ prior<-list('intercept' = list(fn = 'gamma', par1 =900, par2 =100 ),
             'split' = list(fn = 'unif', par1=0, par2=72),
             'sigma' = list(fn = 'gamma', par1=25, par2=10))
 
+prior.v<-list('intercept' = list(fn = 'gamma', par1 =100, par2 =10 ), 
+            'base' = list(fn = 'beta', par1 =.2, par2=7),
+            'rate' = list(fn = 'beta', par1= .2,par2 =7),
+            'proportion' = list(fn =  'beta', par1 =.1, par2 = 7),
+            'jump' = list(fn = 'beta', par1=.1, par2=7),
+            'split' = list(fn = 'gamma', par1=10, par2=10),
+            'sigma' = list(fn = 'gamma', par1=10, par2=10))
+
+
+
 
 ##plot prior distributions 
-write_json(prior, 'prior.json')
-p<-visualize.priors.multi(list('prior.json'))
+write_json(prior.m, 'prior.m.json')
+write_json(prior.v, 'prior.v.json')
+p<-visualize.priors.multi( list('prior.v.json'))
+p<-visualize.priors.multi( list('prior.m.json'))
 plot(arrangeGrob(grobs =p))
 
 
@@ -30,39 +42,36 @@ plot(arrangeGrob(grobs =p))
 ##draw fake data from the priors
 model = c('power.logistic') #specify model
 t = 1:72 
-n.subjects = 10
+n.subjects = 20
 
 
-fake.data<-fake.subject.data(prior,model,t,n.subjects)
+fake.data.l<-fake.subject.data(prior.m,model,t,n.subjects)
+fake.data.c<-fake.subject.data(prior.m,c('power.constant'),t,n.subjects)
+
 
 
 #view fake data plots
-params<-subset(fake.data$params,model ==model)
+params.l<-fake.data.l$params
+params.c<-fake.data.c$params
 
-fake.subject<-subset(fake.data$fake.data,model ==model)
-fake.subject
 
-which.subject= 1
-params[[2]]
+fake.subject.l<-subset(fake.data.l$fake.data,model ==model)
+fake.subject.c<-subset(fake.data.c$fake.data,model =='power.constant')
+fake.subject.c$subject<-fake.subject.c$subject+20
 
-plot.data.fits(subject.data=subset(fake.subject,subject == which.subject), fit = params[[which.subject]], model = model )
+fake.subject.c
 
+which.subject= 3
+
+pl<-plot.data.fits(subject.data=subset(fake.subject.l,subject == which.subject), fit = params.l[[which.subject]], model = model )
+pc<-plot.data.fits(subject.data=subset(fake.subject.c,subject == which.subject), fit = params.c[[which.subject]], model = c('power.constant') )
+pl
 ##convert fake data to model data format
-nchains = 1
-fake.model.data<-get.plot.data(fake.data= fake.subject,prior.mean=prior,prior.var=prior,model=model, nchains)
+nchains = 2
 
-fake.model.data[[1]]$tau2
 
-##run stan
-if(model == 'power.logistic'){
-  f = 'rt_comparison_constantRLR_logisticRLR-Vectorize-sparse-student-t.stan'
-}
-if(model == 'power.power'){
-  f = 'rt_comparison_constantRLR_powerRLR-Vectorize-sparse-student-t.stan'
-}
+fake.model.fit<-get.stan(fake.data= rbind(fake.subject.l,fake.subject.c),prior.mean=prior.m,prior.var=prior.v,model=model, nchains)
 
-model.data<-fake.model.data
 
-subject.fit.test <- stan(file = f, data = fake.model.data, iter = 1000,warmup =100 , 
-                         chains = nchains, verbose = T)
+plot(fake.model.fit, par = c('pi0[4,1]','pi0[4,2]'))
 
