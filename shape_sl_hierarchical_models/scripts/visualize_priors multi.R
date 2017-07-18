@@ -102,7 +102,7 @@ from.to<-function(list,n.params){
           
         }
         if(fn == 'gamma'){
-          from[i,j] = 0
+          from[i,j] = max(0 , par1 - 3*par2)
           to[i,j] = par1 + 3*par2
         }
         if(fn== 'beta'){
@@ -146,7 +146,7 @@ from.to<-function(list,n.params){
         
       }
       if(fn == 'gamma'){
-        out$from[j] = 0
+        out$from[j] = max(0,par1-3*par2)
         out$to[j] = par1 + 3*par2
       }
       if(fn== 'beta'){

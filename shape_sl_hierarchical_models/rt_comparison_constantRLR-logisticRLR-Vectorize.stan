@@ -33,7 +33,7 @@ data{
   real <lower = 0> beta1;
   
   real <lower = 0> mu2;         //rtu rate prior
-  //real <lower = 0> tau2;
+  real <lower = 0> tau2;
   real <lower = 0> alpha2;
   real <lower = 0> beta2;
   
@@ -48,12 +48,12 @@ data{
   real <lower = 0> beta4;
   
   real <lower = 0> mu5;         //rlr logistic proportion 2 prior
-  //real <lower = 0> tau5;
+  real <lower = 0> tau5;
   real <lower = 0> alpha5;
   real <lower = 0> beta5;
   
   real <lower = 0> mu6;         //rlr logistic base prior
-  //real <lower = 0> tau6;
+  real <lower = 0> tau6;
   real <lower = 0> alpha6;
   real <lower = 0> beta6;
   
@@ -173,8 +173,8 @@ model{
   
   //rtu
   target+= gamma_lpdf(rtu_intercept_mean|mu0,tau0);
-  target+= beta_lpdf(rtu_base_mean|mu1,tau1);
-  target+= exponential_lpdf(rtu_rate_mean|mu2);
+  target+= uniform_lpdf(rtu_base_mean|mu1,tau1);
+  target+= gamma_lpdf(rtu_rate_mean|mu2,tau2);
   
 
   target+= gamma_lpdf(rtu_intercept_var|alpha0, beta0);
@@ -183,8 +183,8 @@ model{
   
   //rlr logistic  
   target += gamma_lpdf(rlr_logistic_intercept_mean|mu4,tau4);
-  target += exponential_lpdf(rlr_logistic_rate_mean|mu5);
-  target += exponential_lpdf(rlr_logistic_intercept2_mean|mu6);
+  target += gamma_lpdf(rlr_logistic_rate_mean|mu5,tau5);
+  target += beta_lpdf(rlr_logistic_intercept2_mean|mu6,tau6);
   target += uniform_lpdf(rlr_logistic_split_mean|mu7,tau7);  
   
   target += gamma_lpdf(rlr_logistic_intercept_var|alpha4, beta4);

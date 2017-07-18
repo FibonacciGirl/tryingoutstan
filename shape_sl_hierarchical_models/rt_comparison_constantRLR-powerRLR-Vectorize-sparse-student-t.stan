@@ -145,8 +145,7 @@ transformed parameters{
               rt1_mu[n] = rt_mu[n]*rlr_constant_intercept[jj[n]];
               rt2_mu[n] = rt_mu[n]*rlr_power_intercept[jj[n]]*( 1+ rlr_power_base[jj[n]]*((tt[n])^(-rlr_power_rate[jj[n]])-1));
               
-              //log_q_z1[n] = log(pi0[1]) + normal_lpdf(rt[n]|rt1_mu[n],sigma[jj[n]]);
-              //log_q_z2[n] = log(pi0[2]) + normal_lpdf(rt[n]|rt2_mu[n],sigma[jj[n]]);
+
 
               log_q_z1[jj[n]] = log_q_z1[jj[n]] + normal_lpdf(rt[n]|rt1_mu[n],sigma[jj[n]]);
 
@@ -157,8 +156,6 @@ transformed parameters{
             else{
               rt1_mu[n] = 0;
               rt2_mu[n] = 0;
-              //log_q_z1[n] = 0;
-              //log_q_z2[n] = 0;
 
             }
       
@@ -177,7 +174,7 @@ model{
   
   //rtu
   target+= gamma_lpdf(rtu_intercept_mean|mu0,tau0);
-  target+= gamma_lpdf(rtu_base_mean|mu1,tau1);
+  target+= uniform_lpdf(rtu_base_mean|mu1,tau1);
   target+= gamma_lpdf(rtu_rate_mean|mu2,tau2);
   
   
@@ -197,10 +194,10 @@ model{
   
 
   target += gamma_lpdf(rlr_power_intercept_mean|mu4,tau4);
-  target += gamma_lpdf(rlr_power_base_mean|mu5,tau5);
+  target += uniform_lpdf(rlr_power_base_mean|mu5,tau5);
   target += gamma_lpdf(rlr_power_rate_mean|mu6,tau6);
   target += gamma_lpdf(rlr_power_intercept_var|alpha4, beta4);
-  target += gamma_lpdf(rlr_power_base_var|alpha5,beta5);
+  target += uniform_lpdf(rlr_power_base_var|alpha5,beta5);
   target += gamma_lpdf(rlr_power_rate_var|alpha6,beta6);
   
   
@@ -212,9 +209,6 @@ model{
   for(n in 1:N){
     if(pp[n]==0){
       target += normal_lpdf(rt[n]|rt_mu[n],sigma[jj[n]]);
-    }
-    else{
-      //target += log_sum_exp(log_q_z1[n],log_q_z2[n]);
     }
   }
   for(j in 1:J){

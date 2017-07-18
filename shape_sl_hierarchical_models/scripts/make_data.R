@@ -77,9 +77,10 @@ r.gamma<- function(params){
   return(rgamma(1, shape = a , rate = b))
 }
 
+
 r.beta<-function (params){
-  a<-params[1]
-  b<-params[2]
+  a<-betaABfromModeKappa(params[1],params[2])$a
+  b<-betaABfromModeKappa(params[1],params[2])$b
   return(rbeta(1, a, b))
 }
 
@@ -348,14 +349,12 @@ library(tidyr)
 
 
 
-get.plot.data<-function(fake.data, prior.mean, prior.var,model){
+get.plot.data<-function(fake.data, prior.mean, prior.var,model,nchains){
   
   fake.pred<-data.frame(j= fake.data$subject,t= fake.data$t, rt= fake.data$predictable, p = rep(1,length(fake.data$t)))
   fake.unpred<-data.frame(j = fake.data$subject, t= fake.data$t, rt = fake.data$unpredictable, p = rep(0,length(fake.data$t)))
   fake.data<-rbind(fake.pred,fake.unpred)
   
-  
-  print(fake.data)
   
   Tr = max(fake.data$t)
   J  = length(unique(fake.data$j))
@@ -378,8 +377,7 @@ get.plot.data<-function(fake.data, prior.mean, prior.var,model){
   rlr_logistic_rate_mean= prior.params(prior.mean$rate)
   rlr_logistic_split_mean= prior.params(prior.mean$split)
   
-  
-  
+
   
   alpha= sigma.mean[1]
   beta= sigma.mean[2]
@@ -452,7 +450,7 @@ get.plot.data<-function(fake.data, prior.mean, prior.var,model){
       pp=pp,
       p_prior=p_prior,
       alpha = alpha,
-      beta =beta,
+      beta = beta,
       a = a,
       b = b,
       mu0 = mu0,
@@ -460,15 +458,15 @@ get.plot.data<-function(fake.data, prior.mean, prior.var,model){
       mu1 = mu1,
       tau1 = tau1,
       mu2 = mu2,
-      #tau2 = tau2,
+      tau2 = tau2,
       mu3 = mu3,
       tau3 = tau3,
       mu4 = mu4,
       tau4 = tau4,
       mu5 = mu5,
-      #tau5 = tau5,
+      tau5 = tau5,
       mu6 = mu6,
-      #tau6 = tau6,
+      tau6 = tau6,
       mu7 = mu7,
       tau7 = tau7,
       
@@ -512,15 +510,15 @@ get.plot.data<-function(fake.data, prior.mean, prior.var,model){
       mu1 = mu1,
       tau1 = tau1,
       mu2 = mu2,
-      #tau2 = tau2,
+      tau2 = tau2,
       mu3 = mu3,
       tau3 = tau3,
       mu4 = mu4,
       tau4 = tau4,
       mu5 = mu5,
-      #tau5 = tau5,
+      tau5 = tau5,
       mu6 = mu6,
-      #tau6 = tau6,
+      tau6 = tau6,
   
       
       
@@ -542,6 +540,7 @@ get.plot.data<-function(fake.data, prior.mean, prior.var,model){
     ), nchains))
   }
   
+
   return(model.data)
 
 }
@@ -575,6 +574,4 @@ prior.params<-function(prior){
     return(params)
   }
 }
-
-
 
