@@ -1,0 +1,1 @@
+{"intercept":{"fn":["gamma"],"par1":[100],"par2":[10]},"base":{"fn":["beta"],"par1":[0.2],"par2":[7]},"rate":{"fn":["beta"],"par1":[0.2],"par2":[7]},"proportion":{"fn":["beta"],"par1":[0.1],"par2":[7]},"jump":{"fn":["beta"],"par1":[0.1],"par2":[7]},"split":{"fn":["gamma"],"par1":[10],"par2":[10]},"sigma":{"fn":["gamma"],"par1":[10],"par2":[10]}}

@@ -57,10 +57,11 @@ data{
   real <lower = 0> alpha6;
   real <lower = 0> beta6;
   
-  real <lower = 0> nu; //degrees of freedom
   
 }
 parameters{
+  real <lower = 0> nu; //degrees of freedom
+
   //model selection parameter
   simplex[2] p;
   simplex[2] pi0[J];
@@ -98,11 +99,11 @@ parameters{
   real <lower = 0> rtu_rate_var;
   
   //rlr cosntant
-  real <lower = 0, upper = 2000>  rlr_constant_intercept_mean;
+  real <lower = 0, upper = 5>  rlr_constant_intercept_mean;
   real <lower = 0>  rlr_constant_intercept_var;
   
   //rlr power
-  real <lower = 0,upper=2000> rlr_power_intercept_mean;
+  real <lower = 0,upper=5> rlr_power_intercept_mean;
   real <lower = 0> rlr_power_intercept_var;
   
   real <lower = 0, upper = 1> rlr_power_base_mean;
@@ -126,11 +127,11 @@ transformed parameters{
   
     for(j in 1:J){
       log_q_z1[j] = log(pi0[j,1])
-                    + student_t_lpdf(rlr_constant_intercept[j]|nu, rlr_constant_intercept_mean, rlr_constant_intercept_var);
+                    + normal_lpdf(rlr_constant_intercept[j]| rlr_constant_intercept_mean, rlr_constant_intercept_var);
       log_q_z2[j] = log(pi0[j,2])
-                    + student_t_lpdf(rlr_power_intercept[j]|nu,rlr_power_intercept_mean,rlr_power_intercept_var)
-                    + student_t_lpdf(rlr_power_base[j]|nu,rlr_power_base_mean,rlr_power_base_var)
-                    + student_t_lpdf(rlr_power_rate[j]|nu, rlr_power_rate_mean,rlr_power_rate_var);
+                    + normal_lpdf(rlr_power_intercept[j]|nu,rlr_power_intercept_mean,rlr_power_intercept_var)
+                    + normal_lpdf(rlr_power_base[j]|nu,rlr_power_base_mean,rlr_power_base_var)
+                    + normal_lpdf(rlr_power_rate[j]|nu, rlr_power_rate_mean,rlr_power_rate_var);
   
     }
 
@@ -184,12 +185,12 @@ model{
   
   
   //indidvidual priors
-  target+= student_t_lpdf(sigma|nu,sigma_mean,sigma_var);
+  target+= normal_lpdf(sigma|nu,sigma_mean,sigma_var);
   
   //rtu
-  target+= student_t_lpdf(rtu_intercept|nu, rtu_intercept_mean,rtu_intercept_var);
-  target+= student_t_lpdf(rtu_base|nu, rtu_base_mean,rtu_base_var);
-  target+= student_t_lpdf(rtu_rate|nu, rtu_rate_mean,rtu_rate_var);
+  target+= normal_lpdf(rtu_intercept|nu, rtu_intercept_mean,rtu_intercept_var);
+  target+= normal_lpdf(rtu_base|nu, rtu_base_mean,rtu_base_var);
+  target+= normal_lpdf(rtu_rate|nu, rtu_rate_mean,rtu_rate_var);
   
   
 
