@@ -1,3 +1,7 @@
+#install.packages('polynom')
+require(polynom)
+require(MCMCpack)
+
 
 source('scripts/model_predict.R')
 source('scripts/DBDA2E-utilities.R')
@@ -77,6 +81,19 @@ r.gamma<- function(params){
   return(rgamma(1, shape = a , rate = b))
 }
 
+r.invgamma<- function(params){
+  p<- c(params[2], - (4*params[2] + params[1]^2), (5*params[2] - 2*params[1]^2), -(2*params[2] + params[1]^2))
+  p<- as.polynomial(p)
+  
+  a<- max(Re(solve(p)))
+  b<- params[1]*(a +1)
+  return(rinvgamma(1, a , b))
+}
+r.invchisq<- function(params){
+  a<-gammaShRaFromModeSD(params[1],params[2])$shape*2
+  
+  return(rinvchisq(1,a))
+}
 
 r.beta<-function (params){
   a<-betaABfromModeKappa(params[1],params[2])$a
@@ -159,8 +176,14 @@ r.prior<-function(type, priors){
   if(fn == 'gamma'){
     return(r.prior.fn(r.gamma,params))
   }
+  if(fn == 'inv_gamma'){
+    return(r.prior.fn(r.invgamma,params))
+  }
   if(fn == 'beta'){
     return(r.prior.fn(r.beta,params))
+  }
+  if(fn == 'inv_chi_square'){
+    return(r.prior.fn(r.invgamma,params))
   }
   if(fn == 'exp'){
     return(r.prior.fn(r.exp,params))
@@ -186,37 +209,42 @@ generate.parameter.values<-function(priors, model = c('power.constant',
   recovery.parameter.values<- list()
   i=0
   
+  
+  intercept = r.prior('intercept',priors)
+  base= r.prior('base',priors)
+  rate= - r.prior('rate',priors)
+  
   for(m in model){
     i=i+1
     if(m == 'power.constant'){
-      recovery.parameter.values[[i]] = list(intercept = r.prior('intercept',priors),
-                          base= r.prior('base',priors), 
-                          rate= - r.prior('rate',priors),
+      recovery.parameter.values[[i]] = list(intercept = intercept,
+                          base= base, 
+                          rate= rate,
                           proportion = r.prior('proportion',priors),
                           sigma = r.prior('sigma',priors))
     }
     if(m == 'piecewise.power.constant'){
-      recovery.parameter.values[[i]] =  list(intercept = r.prior('intercept',priors),
-                                    base= r.prior('base',priors), 
-                                    rate= -r.prior('rate',priors),
+      recovery.parameter.values[[i]] =  list(intercept = intercept,
+                                             base= base, 
+                                             rate= rate,
                                     proportion = r.prior('proportion',priors),
                                     jump = r.prior('jump',priors),
                                     split = r.prior('split',priors),
                                     sigma=r.prior('sigma',priors))
     }
     if(m == 'power.power'){
-      recovery.parameter.values[[i]] = list(intercept = r.prior('intercept',priors),
-                       base= r.prior('base',priors), 
-                       rate= -r.prior('rate',priors),
+      recovery.parameter.values[[i]] = list(intercept = intercept,
+                                            base= base, 
+                                            rate= rate,
                        proportion = r.prior('proportion',priors), 
                        base.1= r.prior('base.1',priors), 
                        rate.1= -r.prior('rate.1',priors),
                        sigma = r.prior('sigma',priors))
     }
     if(m == 'power.logistic'){
-      recovery.parameter.values[[i]] =  list(intercept = r.prior('intercept',priors), 
-                          base= r.prior('base',priors), 
-                          rate= - r.prior('rate',priors),
+      recovery.parameter.values[[i]] =  list(intercept = intercept,
+                                             base= base, 
+                                             rate= rate,
                           proportion = r.prior('proportion',priors), 
                           jump = r.prior('jump',priors), 
                           rate.1= -r.prior('rate.1',priors),
@@ -232,8 +260,6 @@ generate.parameter.values<-function(priors, model = c('power.constant',
 
 add.noise<-function(recover,sigma){
   n<-length(recover)
-  
-
   
   recover.plus.noise<-numeric()
   for(i in 1:n){
@@ -263,8 +289,8 @@ create.recovery.data<-function(par, t, models= c('power.constant',
       rtu<-mapply(u.power.model.predict,t, MoreArgs = list(params[1],params[2],params[3]))
       rl<-mapply(rl.constant.model.predict,t,MoreArgs= list(params[4]))
       rtp<-rl*rtu
-      power.constant.recover.u<-add.noise(rtu,params[5])
-      power.constant.recover.p<-add.noise(rtp,params[5])
+      power.constant.recover.u<-add.noise(rtu,sqrt(params[5]))
+      power.constant.recover.p<-add.noise(rtp,sqrt(params[5]))
     }
 
     if(m == 'power.logistic'){
@@ -274,8 +300,11 @@ create.recovery.data<-function(par, t, models= c('power.constant',
       rtu<-mapply(u.power.model.predict,t,MoreArgs = list(params[1],params[2],params[3]))
       rl<-mapply(rl.logistic.model.predict,t,MoreArgs = list(params[4],params[5],params[6],params[7]))
       rtp<-rl*rtu
-      power.logistic.recover.u<-add.noise(rtu,params[8])
-      power.logistic.recover.p<-add.noise(rtp,params[8])
+      
+      print(params[8])
+      
+      power.logistic.recover.u<-add.noise(rtu,sqrt(params[8]))
+      power.logistic.recover.p<-add.noise(rtp,sqrt(params[8]))
     }
 
     if(m == 'power.power'){
@@ -284,8 +313,8 @@ create.recovery.data<-function(par, t, models= c('power.constant',
       rl<-mapply(rl.power.model.predict,t,MoreArgs = list(params[4],params[5],params[6]))
 
       rtp<-rl*rtu
-      power.power.recover.u<-add.noise(rtu,params[7])
-      power.power.recover.p<-add.noise(rtp,params[7])
+      power.power.recover.u<-add.noise(rtu,sqrt(params[7]))
+      power.power.recover.p<-add.noise(rtp,sqrt(params[7]))
     }
     if(m == 'piecewise.power.constant'){
       rtp<-numeric(length(t))
@@ -302,8 +331,8 @@ create.recovery.data<-function(par, t, models= c('power.constant',
       
       rtp<-c(rtp, rl2*rtu[t2])
 
-      piecewise.power.constant.recover.u<-add.noise(rtu,params[7])
-      piecewise.power.constant.recover.p<-add.noise(rtp,params[7])
+      piecewise.power.constant.recover.u<-add.noise(rtu,sqrt(params[7]))
+      piecewise.power.constant.recover.p<-add.noise(rtp,sqrt(params[7]))
       
    
     }
@@ -355,6 +384,7 @@ fake.subject.data <- function(prior, model, t, n.subjects){
     
     params[[i]]<-generate.parameter.values(fake.prior, model= model)
 
+    
     fake.subject <- cbind(subject = rep(i, length(t)),create.recovery.data(params[[i]], t, models = model))
     fake.data <- rbind(fake.data, fake.subject)
   }
@@ -385,9 +415,7 @@ get.stan<-function(fake.data, prior.mean, prior.var,model,nchains){
   fake.unpred<-data.frame(j = fake.data$subject, t= fake.data$t, rt = fake.data$unpredictable, p = rep(0,length(fake.data$t)))
   fake.data<-rbind(fake.pred,fake.unpred)
   
-  
 
-  
 
   if(model == 'power.logistic'){
     Tr = max(fake.data$t)
@@ -399,9 +427,7 @@ get.stan<-function(fake.data, prior.mean, prior.var,model,nchains){
     tt = fake.data$t
     pp = fake.data$p
     
-    
-    
-    sigma_mean= prior.params(prior.mean$sigma)
+    sigma_group= prior.params(prior.mean$sigma)
     rtu_intercept_mean= prior.params(prior.mean$intercept)
     rtu_base_mean= prior.params(prior.mean$base)
     rtu_rate_mean= prior.params(prior.mean$rate)
@@ -410,10 +436,13 @@ get.stan<-function(fake.data, prior.mean, prior.var,model,nchains){
     rlr_logistic_jump_mean= prior.params(prior.mean$jump)
     rlr_logistic_rate_mean= prior.params(prior.mean$rate)
     rlr_logistic_split_mean= prior.params(prior.mean$split)
-
-
-    alpha= sigma_mean[1]
-    beta= sigma_mean[2]
+    
+    
+    # alpha= sigma_mean[1]
+    # beta= sigma_mean[2]
+    
+    sigma_alpha= sigma_group[1]
+    sigma_beta= sigma_group[2]
     
     mu0 = rtu_intercept_mean[1]
     tau0= rtu_intercept_mean[2]
@@ -433,7 +462,7 @@ get.stan<-function(fake.data, prior.mean, prior.var,model,nchains){
     tau7= rlr_logistic_split_mean[2]
     
     
-    sigma_var= prior.params(prior.var$sigma)
+
     rtu_intercept_var= prior.params(prior.var$intercept)
     rtu_base_var= prior.params(prior.var$base)
     rtu_rate_var= prior.params(prior.var$rate)
@@ -444,8 +473,8 @@ get.stan<-function(fake.data, prior.mean, prior.var,model,nchains){
     rlr_logistic_split_var= prior.params(prior.var$split)
     
     
-    a= sigma_var[1]
-    b= sigma_var[2]
+    # a= 1/sigma_var[1]
+    # b= 1/sigma_var[2]
     
     alpha0 = rtu_intercept_var[1]
     beta0= rtu_intercept_var[2]
@@ -477,10 +506,12 @@ get.stan<-function(fake.data, prior.mean, prior.var,model,nchains){
       tt=tt,
       pp=pp,
       p_prior=p_prior,
-      alpha = alpha,
-      beta = beta,
-      a = a,
-      b = b,
+      sigma_alpha = sigma_alpha,
+      sigma_beta = sigma_beta,
+      # alpha = alpha,
+      # beta = beta,
+      # a = a,
+      # b = b,
       mu0 = mu0,
       tau0 = tau0,
       mu1 = mu1,
@@ -512,12 +543,14 @@ get.stan<-function(fake.data, prior.mean, prior.var,model,nchains){
       alpha5 = alpha5,
       beta5=beta5,
       alpha6 = alpha6,
-      beta6=beta6,
-      alpha7 = alpha7,
-      beta7=beta7
-  
+      beta6=beta6
+      # alpha7 = alpha7,
+      # beta7=beta7
+      
     ), nchains))
-    f = 'rt_comparison_constantRLR-logisticRLR-Vectorize.stan'
+    f = 'test.stan'
+    
+
   }
   if(model == 'power.power'){
     Tr = max(fake.data$t)
@@ -539,7 +572,7 @@ get.stan<-function(fake.data, prior.mean, prior.var,model,nchains){
     rlr_power_intercept_mean= prior.params(prior.mean$proportion)
     rlr_power_base_mean= prior.params(prior.mean$base)
     rlr_power_rate_mean= prior.params(prior.mean$rate)
-
+    
     
     
     
@@ -560,7 +593,7 @@ get.stan<-function(fake.data, prior.mean, prior.var,model,nchains){
     tau5=rlr_power_base_mean[2]
     mu6 = rlr_power_rate_mean[1]
     tau6= rlr_power_rate_mean[2]
-
+    
     
     
     sigma_var= prior.params(prior.var$sigma)
@@ -571,7 +604,7 @@ get.stan<-function(fake.data, prior.mean, prior.var,model,nchains){
     rlr_power_intercept_var= prior.params(prior.var$proportion)
     rlr_power_base_var= prior.params(prior.var$base)
     rlr_power_rate_var= prior.params(prior.var$rate)
-
+    
     
     
     a= sigma_var[1]
@@ -591,7 +624,7 @@ get.stan<-function(fake.data, prior.mean, prior.var,model,nchains){
     beta5=rlr_power_base_var[2]
     alpha6 = rlr_power_rate_var[1]
     beta6= rlr_power_rate_var[2]
-
+    
     
     p1=.5
     p2=.5
@@ -625,7 +658,7 @@ get.stan<-function(fake.data, prior.mean, prior.var,model,nchains){
       tau5 = tau5,
       mu6 = mu6,
       tau6 = tau6,
-  
+      
       
       
       alpha0 = alpha0,
@@ -642,16 +675,289 @@ get.stan<-function(fake.data, prior.mean, prior.var,model,nchains){
       beta5=beta5,
       alpha6 = alpha6,
       beta6=beta6
-  
+      
     ), nchains))
     f = 'rt_comparison_constantRLR-powerRLR.stan'
   }
-
   
-  test <- stan(file = f, data = model.data, iter = 10000,warmup =1000 , 
+  print(model.data[[1]])
+  
+  test <- stan(file = f, data = model.data, iter = 20000,warmup =2000 , 
                chains = nchains, verbose = T)
 
   return(test)
+
+}
+
+convert.to.stan.data<-function(fake.data, prior.mean, prior.var,model,nchains){
+  fake.pred<-data.frame(j= fake.data$subject,t= fake.data$t, rt= fake.data$predictable, p = rep(1,length(fake.data$t)))
+fake.unpred<-data.frame(j = fake.data$subject, t= fake.data$t, rt = fake.data$unpredictable, p = rep(0,length(fake.data$t)))
+fake.data<-rbind(fake.pred,fake.unpred)
+
+
+
+
+
+if(model == 'power.logistic'){
+  Tr = max(fake.data$t)
+  J  = length(unique(fake.data$j))
+  P  = length(unique(fake.data$p))
+  N  = length(fake.data$rt)
+  rt = fake.data$rt
+  jj = fake.data$j
+  tt = fake.data$t
+  pp = fake.data$p
+  
+  
+  
+  sigma_mean= prior.params(prior.mean$sigma)
+  rtu_intercept_mean= prior.params(prior.mean$intercept)
+  rtu_base_mean= prior.params(prior.mean$base)
+  rtu_rate_mean= prior.params(prior.mean$rate)
+  rlr_constnat_intercept_mean= prior.params(prior.mean$proportion)
+  rlr_logistic_intercept_mean= prior.params(prior.mean$proportion)
+  rlr_logistic_jump_mean= prior.params(prior.mean$jump)
+  rlr_logistic_rate_mean= prior.params(prior.mean$rate)
+  rlr_logistic_split_mean= prior.params(prior.mean$split)
+  
+  
+  sigma_alpha= sigma_mean[1]
+  sigma_beta= sigma_mean[2]
+  
+  mu0 = rtu_intercept_mean[1]
+  tau0= rtu_intercept_mean[2]
+  mu1 = rtu_base_mean[1]
+  tau1= rtu_base_mean[2]
+  mu2 = rtu_rate_mean[1]
+  tau2= rtu_rate_mean[2]
+  mu3 = rlr_constnat_intercept_mean[1]
+  tau3=rlr_constnat_intercept_mean[2]
+  mu4 = rlr_logistic_intercept_mean[1]
+  tau4= rlr_logistic_intercept_mean[2]
+  mu5 = rlr_logistic_jump_mean[1]
+  tau5=rlr_logistic_jump_mean[2]
+  mu6 = rlr_logistic_rate_mean[1]
+  tau6= rlr_logistic_rate_mean[2]
+  mu7 = rlr_logistic_split_mean[1]
+  tau7= rlr_logistic_split_mean[2]
+  
+  
+  sigma_var= prior.params(prior.var$sigma)
+  rtu_intercept_var= prior.params(prior.var$intercept)
+  rtu_base_var= prior.params(prior.var$base)
+  rtu_rate_var= prior.params(prior.var$rate)
+  rlr_constnat_intercept_var= prior.params(prior.var$proportion)
+  rlr_logistic_intercept_var= prior.params(prior.var$proportion)
+  rlr_logistic_jump_var= prior.params(prior.var$jump)
+  rlr_logistic_rate_var= prior.params(prior.var$rate)
+  rlr_logistic_split_var= prior.params(prior.var$split)
+  
+  
+  a= sigma_var[1]
+  b= sigma_var[2]
+  
+  alpha0 = rtu_intercept_var[1]
+  beta0= rtu_intercept_var[2]
+  alpha1 = rtu_base_var[1]
+  beta1= rtu_base_var[2]
+  alpha2 = rtu_rate_var[1]
+  beta2= rtu_rate_var[2]
+  alpha3 = rlr_constnat_intercept_var[1]
+  beta3=rlr_constnat_intercept_var[2]
+  alpha4 = rlr_logistic_intercept_var[1]
+  beta4= rlr_logistic_intercept_var[2]
+  alpha5 = rlr_logistic_jump_var[1]
+  beta5=rlr_logistic_jump_var[2]
+  alpha6 = rlr_logistic_rate_var[1]
+  beta6= rlr_logistic_rate_var[2]
+  alpha7 = rlr_logistic_split_var[1]
+  beta7= rlr_logistic_split_var[2]
+  
+  p1=.5
+  p2=.5
+  p_prior=c(p1,p2)
+  model.data<- list(rep(list(
+    Tr = Tr,
+    J=J,
+    P=P,
+    N=N,
+    rt = rt,
+    jj=jj,
+    tt=tt,
+    pp=pp,
+    p_prior=p_prior,
+    sigma_alpha = sigma_alpha,
+    sigma_beta = sigma_beta,
+    # alpha = alpha,
+    # beta = beta,
+    # a = a,
+    # b = b,
+    mu0 = mu0,
+    tau0 = tau0,
+    mu1 = mu1,
+    tau1 = tau1,
+    mu2 = mu2,
+    tau2 = tau2,
+    mu3 = mu3,
+    tau3 = tau3,
+    mu4 = mu4,
+    tau4 = tau4,
+    mu5 = mu5,
+    tau5 = tau5,
+    mu6 = mu6,
+    tau6 = tau6,
+    mu7 = mu7,
+    tau7 = tau7,
+    
+    
+    alpha0 = alpha0,
+    beta0 = beta0,
+    alpha1 = alpha1,
+    beta1 = beta1,
+    alpha2 = alpha2,
+    beta2 = beta2,
+    alpha3 = alpha3,
+    beta3 = beta3,
+    alpha4 = alpha4,
+    beta4 = beta4,
+    alpha5 = alpha5,
+    beta5=beta5,
+    alpha6 = alpha6,
+    beta6=beta6
+    # alpha7 = alpha7,
+    # beta7=beta7
+    
+  ), nchains))
+  f = 'test.stan'
+}
+if(model == 'power.power'){
+  Tr = max(fake.data$t)
+  J  = length(unique(fake.data$j))
+  P  = length(unique(fake.data$p))
+  N  = length(fake.data$rt)
+  rt = fake.data$rt
+  jj = fake.data$j
+  tt = fake.data$t
+  pp = fake.data$p
+  
+  
+  
+  sigma_mean= prior.params(prior.mean$sigma)
+  rtu_intercept_mean= prior.params(prior.mean$intercept)
+  rtu_base_mean= prior.params(prior.mean$base)
+  rtu_rate_mean= prior.params(prior.mean$rate)
+  rlr_constnat_intercept_mean= prior.params(prior.mean$proportion)
+  rlr_power_intercept_mean= prior.params(prior.mean$proportion)
+  rlr_power_base_mean= prior.params(prior.mean$base)
+  rlr_power_rate_mean= prior.params(prior.mean$rate)
+  
+  
+  
+  
+  alpha= sigma_mean[1]
+  beta= sigma_mean[2]
+  
+  mu0 = rtu_intercept_mean[1]
+  tau0= rtu_intercept_mean[2]
+  mu1 = rtu_base_mean[1]
+  tau1= rtu_base_mean[2]
+  mu2 = rtu_rate_mean[1]
+  tau2= rtu_rate_mean[2]
+  mu3 = rlr_constnat_intercept_mean[1]
+  tau3=rlr_constnat_intercept_mean[2]
+  mu4 = rlr_power_intercept_mean[1]
+  tau4= rlr_power_intercept_mean[2]
+  mu5 = rlr_power_base_mean[1]
+  tau5=rlr_power_base_mean[2]
+  mu6 = rlr_power_rate_mean[1]
+  tau6= rlr_power_rate_mean[2]
+  
+  
+  
+  sigma_var= prior.params(prior.var$sigma)
+  rtu_intercept_var= prior.params(prior.var$intercept)
+  rtu_base_var= prior.params(prior.var$base)
+  rtu_rate_var= prior.params(prior.var$rate)
+  rlr_constnat_intercept_var= prior.params(prior.var$proportion)
+  rlr_power_intercept_var= prior.params(prior.var$proportion)
+  rlr_power_base_var= prior.params(prior.var$base)
+  rlr_power_rate_var= prior.params(prior.var$rate)
+  
+  
+  
+  a= sigma_var[1]
+  b= sigma_var[2]
+  
+  alpha0 = rtu_intercept_var[1]
+  beta0= rtu_intercept_var[2]
+  alpha1 = rtu_base_var[1]
+  beta1= rtu_base_var[2]
+  alpha2 = rtu_rate_var[1]
+  beta2= rtu_rate_var[2]
+  alpha3 = rlr_constnat_intercept_var[1]
+  beta3=rlr_constnat_intercept_var[2]
+  alpha4 = rlr_power_intercept_var[1]
+  beta4= rlr_power_intercept_var[2]
+  alpha5 = rlr_power_base_var[1]
+  beta5=rlr_power_base_var[2]
+  alpha6 = rlr_power_rate_var[1]
+  beta6= rlr_power_rate_var[2]
+  
+  
+  p1=.5
+  p2=.5
+  p_prior=c(p1,p2)
+  
+  model.data<-list(rep(list( 
+    Tr = Tr,
+    J=J,
+    P=P,
+    N=N,
+    rt = rt,
+    jj=jj,
+    tt=tt,
+    pp=pp,
+    p_prior=p_prior,
+    alpha = alpha,
+    beta = beta,
+    a = a,
+    b = b,
+    mu0 = mu0,
+    tau0 = tau0,
+    mu1 = mu1,
+    tau1 = tau1,
+    mu2 = mu2,
+    tau2 = tau2,
+    mu3 = mu3,
+    tau3 = tau3,
+    mu4 = mu4,
+    tau4 = tau4,
+    mu5 = mu5,
+    tau5 = tau5,
+    mu6 = mu6,
+    tau6 = tau6,
+    
+    
+    
+    alpha0 = alpha0,
+    beta0 = beta0,
+    alpha1 = alpha1,
+    beta1 = beta1,
+    alpha2 = alpha2,
+    beta2 = beta2,
+    alpha3 = alpha3,
+    beta3 = beta3,
+    alpha4 = alpha4,
+    beta4 = beta4,
+    alpha5 = alpha5,
+    beta5=beta5,
+    alpha6 = alpha6,
+    beta6=beta6
+    
+  ), nchains))
+  f = 'rt_comparison_constantRLR-powerRLR.stan'
+}
+return(list(model.data = model.data, file = f ))
 
 }
 
@@ -666,6 +972,17 @@ prior.params<-function(prior){
   if(fn == 'gamma'){
     a<-gammaShRaFromModeSD(params[1], params[2])$shape
     b<-gammaShRaFromModeSD(params[1], params[2])$rate
+    params<-c(a,b)
+    return(params)
+  }
+  if(fn == 'inv_gamma'){
+    
+    p<- c(params[2], - (4*params[2] + params[1]^2), (5*params[2] - 2*params[1]^2), -(2*params[2] + params[1]^2))
+    p<- as.polynomial(p)
+    
+    a<- max(Re(solve(p)))
+    b<- params[1]*(a +1)
+
     params<-c(a,b)
     return(params)
   }

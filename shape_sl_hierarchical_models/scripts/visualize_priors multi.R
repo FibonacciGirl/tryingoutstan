@@ -1,3 +1,6 @@
+
+library(polynom)
+library(MCMCpack)
 library(jsonlite)
 library(ggplot2)
 library(gridExtra)
@@ -12,11 +15,13 @@ prior.1<-list('intercept' = list(fn = 'gamma', par1 =800, par2 =200 ),
               'proportion' = list(fn =  'gamma', par1 =1, par2 = .5),
               'base' = list(fn = 'unif', par1 =0, par2=1),
               'rate' = list(fn = 'gamma', par1= .3,par2 =.1),
-              'sigma' = list(fn = 'gamma', par1=25, par2=5),
+              'sigma' = list(fn = 'inv_gamma', par1=25, par2=5),
               'jump' = list(fn = 'exp', par1=20, par2=1),
               'split' = list(fn = 'unif', par1=0, par2=72) )
 
 write_json(prior.1,'prior.1.json')
+library(gridExtra)
+
 
 extract.prior<-function(priors){
 
@@ -105,6 +110,12 @@ from.to<-function(list,n.params){
           from[i,j] = max(0 , par1 - 3*par2)
           to[i,j] = par1 + 3*par2
         }
+        if(fn == 'inv_gamma'){
+
+          
+          from[i,j] = max(0 , par1 - 3*par2)
+          to[i,j] =  par1 + 30*par2
+        }
         if(fn== 'beta'){
           from[i,j] = 0
           to[i,j] = 1
@@ -149,9 +160,18 @@ from.to<-function(list,n.params){
         out$from[j] = max(0,par1-3*par2)
         out$to[j] = par1 + 3*par2
       }
+      if(fn == 'inv_gamma'){
+        out$from[j] = max(0 , par1 - .5*par2)
+        out$to[j] = par1 + .5*par2
+      }
+      'inv-chi_square'
       if(fn== 'beta'){
         out$from[j] = 0
         out$to[j] = 1
+      }
+      if(fn ==  'inv-chi_square'){
+        out$from[j] = max(0 , par1 - .5*par2)
+        out$to[j] = par1 + .5*par2
       }
       if(fn == 'unif'){
         out$from[j] = par1
@@ -167,20 +187,24 @@ from.to<-function(list,n.params){
   return(out)
 }
 
+plot(graph.prior.multi(plot.prior(list(fn= 'inv_chi_square',par1 = 1, par2 =1,title = 'inv-chi-squared' ),from=0, to=76)))
 
 plot.prior<-function(prior,from,to){
   
   fn<-prior[1]
   par1<-as.numeric(prior[2])
   par2<-as.numeric(prior[3])
-  title<-prior[4]
+  title<-as.character(prior[4])
+
+  print(title)
   
   by<-(to-from)/1000
   x<-seq(from,to,by)
   
+  
   if(fn == 'normal'){
     
-    y<- sapply(x, function(x){dnorm(x,par1,par2)}) 
+    y<- sapply(x, function(x){return(dnorm(x,par1,par2))}) 
     
     title.2<- paste('Normal(',toString(round(par1,2)),',',toString(round(par2,2)), ')',sep="")
   }
@@ -188,28 +212,49 @@ plot.prior<-function(prior,from,to){
     
     a<-gammaShRaFromModeSD(par1,par2)$shape
     b<-gammaShRaFromModeSD(par1,par2)$rate
-    y<- sapply(x, function(x){dgamma(x,a,b)})
+    y<- sapply(x, function(x){return(dgamma(x,a,b))})
     
     title.2<- paste('Gamma(',toString(round(a,2)),',',toString(round(b,2)), ')',sep="")
+  }
+  if(fn == 'inv_gamma'){
+    params<-c(par1,par2)
+    
+    p<- c(params[2], - (4*params[2] + params[1]^2), (5*params[2] - 2*params[1]^2), -(2*params[2] + params[1]^2))
+    p<- as.polynomial(p)
+    
+    a<- max(Re(solve(p)))
+    b<- params[1]*(a +1)
+
+    y<- sapply(x, function(x){return(dinvgamma(x,shape = a, scale = b))})
+
+
+    title.2<- paste('Inverse-gamma(',toString(round(a,2)),',',toString(round(b,2)), ')',sep="")
   }
   if(fn== 'beta'){
     
     a<-betaABfromModeKappa(par1,par2)$a
     b<-betaABfromModeKappa(par1,par2)$b
     
-    y<- sapply(x, function(x){dbeta(x,a,b)})  
+    y<- sapply(x, function(x){return(dbeta(x,a,b))})  
     
     title.2<- paste('Beta(',toString(round(a,2)),',',toString(round(b,2)), ')',sep="")
   }
+  if(fn == 'inv_chi_square'){
+
+    
+    y<- sapply(x, function(x){return(dinvchisq(x,par1))}) 
+
+    title.2<- paste('Inverse-Chi-Sqaured(',toString(round(par1,2)),',',toString(round(par2,2)), ')',sep="")
+  }
   if(fn == 'unif'){
     
-    y<- sapply(x, function(x){dunif(x,par1,par2)}) 
+    y<- sapply(x, function(x){return(dunif(x,par1,par2))}) 
     
     title.2<- paste('Uniform(',toString(round(par1,2)),',',toString(round(par2,2)), ')',sep="")
   }
   if(fn == 'exp'){
     
-    y<- sapply(x, function(x){dexp(x,par1)}) 
+    y<- sapply(x, function(x){return(dexp(x,par1))}) 
     
     title.2<- paste('Exponential(',toString(round(par1,2)), ')',sep="")
   }
@@ -261,6 +306,8 @@ visualize.priors.multi<-function(list){
     from<-from.to(list,n.params)$from
     to<-from.to(list,n.params)$to
     
+
+    
     p<-list()
     plot<-list()
     
@@ -281,20 +328,23 @@ visualize.priors.multi<-function(list){
   }
   
   else{
+
+    
     pr<-read_json(list[[1]])
     prior<-extract.prior(pr)
     n.params<-length(prior)
     
 
-    
     from<-from.to(list,n.params)$from
     to<-from.to(list,n.params)$to
+
+
     
     p<-list()
     plot<-list()
     
     for(i in 1:n.params){
-      
+
       plot[[i]]<-plot.prior(prior[[i]], from[i],to[i])
       
       p[[i]]<-graph.prior.multi(plot[[i]])
@@ -302,5 +352,3 @@ visualize.priors.multi<-function(list){
   }
   return(p)
 }
-
-

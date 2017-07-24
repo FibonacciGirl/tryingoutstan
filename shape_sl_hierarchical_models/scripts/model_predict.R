@@ -20,6 +20,16 @@ rl.power.model.predict<-function(t,d,e,f){
   return(c(rl=rl))
 }
 
+rl.piecewise.constant.model.predict<-function(t,d,e,f){
+  if(t<=f){
+   rl =d
+  }
+  if(t>f){
+   rl =e
+  }
+  return(c(rl=rl))
+}
+
 
 # 
 # source('scripts/Likelihood 2/create recovery data.R')
@@ -37,11 +47,9 @@ rl.power.model.predict<-function(t,d,e,f){
 # )
 # 
 # 
-# params<-generate.parameter.values(priors)
-# params<-as.list(head(model.params(params,'exponential.power'),-1))
-# 
-# t<-1:72
-# test.p.c<-mapply(power.constant.model.predict,t,MoreArgs = params )
+
+t=1:72
+test.p.c<-mapply(rl.logistic.model.predict,t,MoreArgs = list(.9,.2,-1,40) )
 # test.e.c<-mapply(exponential.constant.model.predict,t,MoreArgs = params)
 # test.p.p<-mapply(power.power.model.predict,t,MoreArgs = params)
 # test.p.e<-mapply(power.exponential.model.predict,t,MoreArgs = params)
@@ -59,20 +67,24 @@ rl.power.model.predict<-function(t,d,e,f){
 # 
 
 
+
+t=1:72
+
+
+plot.model.predict(t,test.p.c)
+
+
 plot.model.predict<-function(t,test){
-  plot.data<-rbind(data.frame(t=t,rt=test[1,],type = rep('unpredictable',length(t))),data.frame(t=t,rt=test[2,],type=rep('predictable',length(t))))
-  rl.data<-data.frame(t=t,rt=test[3,])
+  plot.data<-data.frame(t=t,rt=test,type = rep('unpredictable',length(t)))
   
   p<-ggplot()+
-    geom_line(data=plot.data,aes(x=t,y=rt,col=type))+
-    ggtitle('Response time vs. trial')+
-    theme_minimal()
+    geom_line(data=plot.data,aes(x=t,y=rt))+
+    ggtitle(title)+
+    xlab ("Appearance Count")+
+    ylab ('Response Time')+
+    theme_bw()
   
-  l<-ggplot()+
-    geom_line(data=rl.data,aes(x=t,y=rt))+
-    ggtitle('Relative learning rate')+
-    theme_minimal()
-  
-  i<-grid.arrange(grobs=list(p,l))
-  return(i)
+
+  return(p)
 }
+

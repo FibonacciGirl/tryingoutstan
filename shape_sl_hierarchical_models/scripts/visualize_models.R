@@ -55,7 +55,7 @@ plot.data.fits<-function(subject.data=NA, fit=NULL,   model=  c('power.constant'
         print(t)
 
         rtu<-mapply(u.power.model.predict,t,MoreArgs = list(params[1],params[2],params[3]))
-        if(t<params[6]){
+        if(t<=params[6]){
         rl<-mapply(rl.constant.model.predict,t,MoreArgs = list(params[4]))
         }
         if(t>params[6]){
@@ -125,23 +125,32 @@ plot.data.fits<-function(subject.data=NA, fit=NULL,   model=  c('power.constant'
     # 
     # p<-arrangeGrob(grobs = p)
     
-    pred<-data.frame(t = line.fit$t , rt = line.fit$predictable, type = 'predictable',model = line.fit$model)
-    unpred<-data.frame(t = line.fit$t, rt = line.fit$unpredictable, type = 'unpredictable',model = line.fit$model)
+
+    pred<-data.frame(t = line.fit$t , rt = line.fit$predictable, stimulus = 'predictable',model = line.fit$model)
+    unpred<-data.frame(t = line.fit$t, rt = line.fit$unpredictable, stimulus = 'unpredictable',model = line.fit$model)
     
     if(!is.na(subject.data)){
     sub<- unique(subject.data$subject)
   
     
     title<-paste('Subject', as.character(sub))
-    subject.pred<-data.frame(t= subject.data$t, rt= subject.data$predictable, type = rep('predictable',length(subject.data$t)))
-    subject.unpred<-data.frame(t= subject.data$t, rt = subject.data$unpredictable, type = rep('unpredictable',length(subject.data$t)))
+    subject.pred<-data.frame(t= subject.data$t, rt= subject.data$predictable, stimulus = rep('predictable',length(subject.data$t)))
+    subject.unpred<-data.frame(t= subject.data$t, rt = subject.data$unpredictable, stimulus = rep('unpredictable',length(subject.data$t)))
+    
     sub.data<-rbind(subject.pred,subject.unpred)
     
     plot.data<-rbind(pred,unpred)
     
+    plot.data$model<-mapply( function(x){if(x == 'power.power'){x = 'Power RLR'}
+      if(x == 'power.constant'){x = ' Constant RLR'}
+      if(x == 'power.logistic'){x= 'Logistic RLR'}
+      return(x)},plot.data$model)
+    
     p<-ggplot()+
-      geom_point(data=sub.data,aes(x=t, y =rt,col=type))+
-      geom_line(data=plot.data,aes(x=t, y =rt,col=type,linetype=model ))+
+      geom_point(data=sub.data,aes(x=t, y =rt,col=stimulus))+
+      geom_line(data=plot.data,aes(x=t, y =rt,col=stimulus,linetype=model ))+
+      xlab ("Appearance Count")+
+      ylab ('Response Time')+
       ggtitle(title)+
       theme_bw()
     
@@ -149,10 +158,37 @@ plot.data.fits<-function(subject.data=NA, fit=NULL,   model=  c('power.constant'
     else{
     plot.data<-rbind(pred,unpred)
     
-    p<-ggplot()+
-      geom_line(data=plot.data,aes(x=t, y =rt,col=type,linetype=model ))+
-      # ggtitle(title)+
-      theme_bw()
+    
+    plot.data$model<-mapply( function(x){if(x == 'power.power'){x = 'Power Law Model'}
+      if(x == 'power.constant'){x = ' Constant Model'}
+      if(x == 'power.logistic'){x= 'Logistic Model'}
+      if(x == 'piecewise.power.constant'){x= 'Constant Piecewise Model'}
+      return(x)},plot.data$model)
+    
+    
+    title<-unique(plot.data$model)
+    
+    if(length(title) == 1){
+      p<-ggplot()+
+        geom_line(data=plot.data,aes(x=t, y =rt,col=stimulus))+
+        xlab ("Appearance Count")+
+        ylab ('Response Time')+
+        ylim (c(0,1000))+
+        ggtitle(title)+
+        theme_bw()
+    }
+    
+    else{    
+      title = paste(title[1], sep = ' vs. ', title[2])
+      
+      p<-ggplot()+
+      geom_line(data=plot.data,aes(x=t, y =rt, col=stimulus, linetype = model))+
+      xlab ("Appearance Count")+
+      ylab ('Response Time')+
+      ylim (c(0,1000))+
+      ggtitle(title)+
+      theme_bw()}
+
     }
     
     # p<-ggplot(subject.data, aes(x=t, y=predictable)) +
@@ -173,15 +209,17 @@ plot.data.fits<-function(subject.data=NA, fit=NULL,   model=  c('power.constant'
     
     title<-paste('Subject', s)
     
-    subject.pred<-data.frame(t= subject.data$t, rt= subject.data$predictable, type = rep('predictable',length(subject.data$t)))
-    subject.unpred<-data.frame(t= subject.data$t, rt = subject.data$unpredictable, type = rep('unpredictable',length(subject.data$t)))
+    subject.pred<-data.frame(t= subject.data$t, rt= subject.data$predictable, stimulus = rep('predictable',length(subject.data$t)))
+    subject.unpred<-data.frame(t= subject.data$t, rt = subject.data$unpredictable, stimulus = rep('unpredictable',length(subject.data$t)))
     
     sub.data<-rbind(subject.pred,subject.unpred)
     
     
     p<-ggplot(sub.data) +
-      geom_point(aes(x=t, y =rt,col=type))+
+      geom_point(aes(x=t, y =rt,col=stimulus))+
       ggtitle(title)+
+      xlab('Apperance Count')+
+      ylab('Response Time')
       theme_minimal()
   }
   

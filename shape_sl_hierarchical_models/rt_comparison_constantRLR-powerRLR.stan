@@ -120,9 +120,17 @@ transformed parameters{
   real <lower = 0, upper = 2000> rt2_mu[N];
   //real log_q_z1[N];
   //real log_q_z2[N];
-  
-  vector[J] log_q_z1;
+  //change sigma to sigma inv
+  real <lower = 0> sigma_inv_mean;
+  real <lower = 0> sigma_inv_var;
+
+  //log likelihood summation over indicator 
+  vector[J] log_q_z1; 
   vector[J] log_q_z2;
+  
+  
+  sigma_inv_mean = 1/sigma_mean;
+  sigma_inv_var = 1/sigma_var;
   
   
     for(j in 1:J){
@@ -148,10 +156,10 @@ transformed parameters{
               
             if(pp[n]==1){
 
-              log_q_z1[jj[n]] = log_q_z1[jj[n]] + normal_lpdf(rt[n]|rt1_mu[n],sigma[jj[n]]);
+              log_q_z1[jj[n]] = log_q_z1[jj[n]] + normal_lpdf(rt[n]|rt1_mu[n],sqrt(sigma[jj[n]]));
 
               
-              log_q_z2[jj[n]] = log_q_z2[jj[n]] + normal_lpdf(rt[n]|rt2_mu[n],sigma[jj[n]]);
+              log_q_z2[jj[n]] = log_q_z2[jj[n]] + normal_lpdf(rt[n]|rt2_mu[n], sqrt(sigma[jj[n]]));
 
             }
  
@@ -165,8 +173,8 @@ model{
   
   //group priors
   
-  target+= gamma_lpdf(sigma_mean|alpha,beta);
-  target+= gamma_lpdf(sigma_var|a,b);
+  target+= gamma_lpdf(sigma_inv_mean|alpha,beta);
+  target+= gamma_lpdf(sigma_inv_var|a,b);
   
   //rtu
   target+= gamma_lpdf(rtu_intercept_mean|mu0,tau0);
@@ -180,7 +188,7 @@ model{
   
   
   //indidvidual priors
-  target+= normal_lpdf(sigma|sigma_mean,sigma_var);
+
   
   //rtu
 
@@ -202,7 +210,7 @@ model{
   //likelihood
   for(n in 1:N){
     if(pp[n]==0){
-      target += normal_lpdf(rt[n]|rt_mu[n],sigma[jj[n]]);
+      target += normal_lpdf(rt[n]|rt_mu[n], sqrt(sigma[jj[n]]));
     }
   }
   for(j in 1:J){
@@ -213,6 +221,8 @@ model{
       target+= normal_lpdf(rtu_rate[j]| rtu_rate_mean,rtu_rate_var);
     
       target += log_sum_exp(log_q_z1[j],log_q_z2[j]);
+      
+      target+= normal_lpdf(sigma[j]|sigma_mean,sigma_var);
       
 
     }
